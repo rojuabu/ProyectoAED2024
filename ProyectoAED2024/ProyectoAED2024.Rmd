@@ -294,6 +294,28 @@ Interventionary studies involving animals or humans, and other studies require
 ethical approval must list the authority that provided approval and the
 corresponding ethical approval code.
 
+Carga de los archivos
+```{r}
+rm(list = ls())
+library(readr)
+# Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
+Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
+# Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
+Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+Hacemos str de ambos conjuntos para ver los tipos de variables y ver si es necesario cambiar algún tipo
+```{r}
+str(Salario)
+```
+
+```{r}
+str(Vivienda)
+# Aquí observamos que el total es de tipo chr por lo que hacemos un casteo a numeric
+Vivienda$Total<-as.numeric(Vivienda$Total)
+```
+
+
 # Results
 
 This section may be divided by subheadings. It should provide a concise and

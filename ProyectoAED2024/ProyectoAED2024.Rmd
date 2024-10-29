@@ -322,6 +322,8 @@ Salario$Total<-as.numeric(Salario$Total)
 #transformamos en un factor
 inter<-as.factor(Salario$`Medidas y percentiles`)
 Salario$`Medidas y percentiles`<-factor(inter,levels = levels(inter),labels = levels(inter))
+# Por último comprobamos que no tenemos ningún dato perdido
+datos_perdidos_salario<-print(Salario[is.na(Salario),])
 ```
 
 ```{r}

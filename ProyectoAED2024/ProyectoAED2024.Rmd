@@ -318,6 +318,10 @@ Salario$Total<-gsub(pattern = '[.]',replacement = '',Salario$Total)
 Salario$Total<-gsub(pattern = '[,]',replacement = '.',Salario$Total)
 # Ahora finalmente hacemos el casteo a numeric
 Salario$Total<-as.numeric(Salario$Total)
+# Además la variable media y percentiles solo puede tener esos valores, por lo que la 
+#transformamos en un factor
+inter<-as.factor(Salario$`Medidas y percentiles`)
+Salario$`Medidas y percentiles`<-factor(inter,levels = levels(inter),labels = levels(inter))
 ```
 
 ```{r}
@@ -326,6 +330,64 @@ str(Vivienda)
 #hacer el casteo a numeric
 Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
+```
+
+Análisis del fichero Salario
+```{r}
+library(knitr)
+library(kableExtra)
+resumen_total_salario<-summary(Salario$Total)
+# Buscamos las filas donde se encuentran el máximo y el mínimo  
+max_salario<-Salario[Salario$Total==resumen_total_salario['Max.'],]
+min_salario<-Salario[Salario$Total==resumen_total_salario['Min.'],]
+resumen<-rbind(max_salario,min_salario)
+row.names(resumen)<-c('Salario máximo','Salario Mínimo')
+kable_styling(kbl(resumen,align = 'c'))
+```
+
+
+Primer análisis referido a la variación de los salarios medios a lo largo de los años
+en las distintas comunidades autónomas 
+```{r}
+library(ggplot2)
+library(scales)
+primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
+
+# Crear colores personalizados manualmente
+colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33",                              "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", 
+                            "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666", 
+                           "#00FFFF", "#FF4500", "#8A2BE2")
+
+# Crear el gráfico
+ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = 'Evolución del Sueldo Medio en Comunidades Autónomas',
+    y = 'Total (€)',
+    color = NULL  # Sin título en la leyenda
+  ) +
+  scale_color_manual(values = colores_personalizados) +  # Colores personalizados
+  guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
+```
+Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias.
+
+Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
+```{r}
+colores_personalizados2 <- c( "#377EB8","#FFC0CB")
+                      
+segundo_análisis_A<-Salario[Salario$`Comunidades autónomas`=='Total Nacional'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
+ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
+    title = 'Discrepancias de Género en el Salario Medio a Nivel Nacional',
+    y = 'Total (€)')
+```
+Análisis B
+```{r}
+colores_personalizados3 <- c("#0073B2", "#FF69B4")
+segundo_análisis_B<-Salario[Salario$`Comunidades autónomas`=='Comunitat Valenciana'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
+ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
+    title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
+    y = 'Total (€)')
 ```
 
 

@@ -307,11 +307,24 @@ Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALS
 Hacemos str de ambos conjuntos para ver los tipos de variables y ver si es necesario cambiar algún tipo
 ```{r}
 str(Salario)
+# Como se puede ver el problema de la variable Total es que tiene comas y puntos,
+# pero en R las comas no son interpretadas con la intención del archivo, por lo que
+# pasamos a cambiar el formato, y una vez con este correcto hacer un casteo a numérico
+
+# Primero eliminamos los puntos, que se emplean en el archivo original para hacer la
+#distinción de 1000
+Salario$Total<-gsub(pattern = '[.]',replacement = '',Salario$Total)
+# Seguidamente cambiamos las comas por puntos para adecuarlo al formato de R
+Salario$Total<-gsub(pattern = '[,]',replacement = '.',Salario$Total)
+# Ahora finalmente hacemos el casteo a numeric
+Salario$Total<-as.numeric(Salario$Total)
 ```
 
 ```{r}
 str(Vivienda)
-# Aquí observamos que el total es de tipo chr por lo que hacemos un casteo a numeric
+# Aquí de igual manera que arriba debemos cambiar las comas a puntos para poder
+#hacer el casteo a numeric
+Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
 ```
 

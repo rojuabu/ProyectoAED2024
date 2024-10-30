@@ -5,9 +5,7 @@ author:
   - name: Noé López García
   - name: Marc Velasco Mateu
 # document options
-journal: notspecified
 type: article
-status: not submit
 # front matter
 simplesummary: |
   Con tal de poner a prueba nuestros conocimientos de análisis exploratorio de datos, analizaremos detenidamente dos datasets sobre el valor de la vivienda española y el salario medio en España.
@@ -20,7 +18,6 @@ abbreviations:
   - short: CCAA
     long: Comunidades autónomas
 bibliography: mybibfile.bib
-appendix: appendix.tex
 endnotes: false
 output: 
   rticles::mdpi_article:
@@ -41,10 +38,6 @@ field of research. Citing a journal paper [@bertrand-krajewski_distribution_1998
 Some MDPI journals use Chicago and others use APA, this template should choose
 the correct citation format for you once you specify the journal in the YAML
 header.
-
-To use endnotes, change `endnotes: true` in the YAML header, then use
-`\endnote{This is an endnote.}`.
-
 
 # Carga de los archivos
 

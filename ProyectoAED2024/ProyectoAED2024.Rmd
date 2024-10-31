@@ -216,6 +216,20 @@ ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = 
     y = 'Total (€)')
 ```
 
+Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
+
+```{r}
+library(tidyr)
+df_filtered<-Salario[Salario$`Comunidades autónomas`!='Total Nacional'&Salario$`Medidas y percentiles`=='Media'& Salario$Sexo!='Ambos sexos',]
+df_filtered<-df_filtered[,!names(df_filtered)%in%'Medidas y percentiles']
+# Empleamos pivot wider para poder hacer la diferencia de manera más sencilla
+df_filtered<-pivot_wider(df_filtered,names_from=Sexo,values_from=Total)
+df_filtered$diferencia<-df_filtered$Hombres-df_filtered$Mujeres
+ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))+geom_line()+geom_point()+
+ scale_color_manual(values = colores_personalizados) +  # Colores personalizados
+  guides(color = guide_legend(title = NULL))
+```
+
 # Conclusion
 
 This section is not mandatory, but can be added to the manuscript if the

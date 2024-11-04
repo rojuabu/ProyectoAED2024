@@ -24,6 +24,15 @@ output:
     extra_dependencies: longtable
 ---
 
+```{r carga de librerias, include=FALSE}
+library(readr)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(scales)
+```
+
+
 # Introduction
 
 The introduction should briefly place the study in a broad context and highlight
@@ -43,7 +52,6 @@ header.
 
 ```{r}
 rm(list = ls())
-library(readr)
 # Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
 # Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
@@ -81,11 +89,9 @@ Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
 ```
 
-Análisis del fichero Salario.
+# Análisis del dataset Salario.
 
 ```{r}
-library(knitr)
-library(kableExtra)
 resumen_total_salario<-summary(Salario$Total)
 # Buscamos las filas donde se encuentran el máximo y el mínimo  
 max_salario<-Salario[Salario$Total==resumen_total_salario['Max.'],]
@@ -100,8 +106,6 @@ Primer análisis referido a la variación de los salarios medios a lo largo de l
 en las distintas comunidades autónomas.
 
 ```{r}
-library(ggplot2)
-library(scales)
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
 # Crear colores personalizados manualmente
@@ -141,6 +145,23 @@ segundo_análisis_B<-Salario[Salario$`Comunidades autónomas`=='Comunitat Valenc
 ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
     y = 'Total (€)')
+```
+
+# Análisis del dataset Vivienda.
+
+```{r vivienda comunidades echo=FALSE}
+Vivienda_simple<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Variación anual',]
+
+# Crear el gráfico
+ggplot(Vivienda_simple, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = 'Evolución del precio medio de la vivienda por Comunidades Autónomas',
+    y = 'Índice %',
+    color = NULL  # Sin título en la leyenda
+  ) +
+  guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
 ```
 
 # Conclusion

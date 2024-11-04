@@ -50,7 +50,9 @@ Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE,
 Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 ```
 
-Hacemos str de ambos conjuntos para ver los tipos de variables y ver si es necesario cambiar algún tipo.
+Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene. 
+En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico.Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
+Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
 
 ```{r}
 str(Salario)
@@ -69,8 +71,19 @@ Salario$Total<-as.numeric(Salario$Total)
 #transformamos en un factor
 inter<-as.factor(Salario$`Medidas y percentiles`)
 Salario$`Medidas y percentiles`<-factor(inter,levels = levels(inter),labels = levels(inter))
+# Ahora con la variable sexo
+inter2<-as.factor(Salario$Sexo)
+Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
+```
+
+Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
+```{r}
 # Por último comprobamos que no tenemos ningún dato perdido
-#datos_perdidos_salario<-print(Salario[is.na(Salario),])
+datos_perdidos_salario<-print(Salario[is.na(Salario)])
+```
+Finalmente guardamos el nuevo fichero con los cambios.
+```{r}
+save(Salario,file = '../data/Salario_clean.csv')
 ```
 
 ```{r}
@@ -81,7 +94,9 @@ Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
 ```
 
-Análisis del fichero Salario.
+# Análisis preliminar del fichero Salario.
+
+Primeramente, se observó el conjunto de datos empleando el comando summary. Además se muestra en una tabla el mayor y el menor valor obtenido al realizar este comando de la variable total. 
 
 ```{r}
 library(knitr)
@@ -94,14 +109,80 @@ resumen<-rbind(max_salario,min_salario)
 row.names(resumen)<-c('Salario máximo','Salario Mínimo')
 kable_styling(kbl(resumen,align = 'c'))
 ```
+Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+library(patchwork)
 
+# Generar histogramas de variables categóricas
+hist1 <- ggplot(Salario, aes(x = Sexo)) + 
+  geom_bar(fill = "skyblue") +
+  theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Sexo")
 
-Primer análisis referido a la variación de los salarios medios a lo largo de los años
-en las distintas comunidades autónomas.
+# Para este segundo creamos un df provisional para obtener unas abreviaturas y simplificar
+# la representación 
+# Crear una copia de df y añadir la columna de abreviaturas
+df_abrev <- Salario
+
+# Diccionario de abreviaturas
+abreviaturas <- c(
+  "Andalucía" = "AND", "Aragón" = "AR", "Asturias, Principado de" = "AST",
+  "Balears, Illes" = "BAL", "Canarias" = "CAN", "Cantabria" = "CNT",
+  "Castilla y León" = "CYL", "Castilla - La Mancha" = "CLM", "Cataluña" = "CAT",
+  "Comunitat Valenciana" = "CV", "Extremadura" = "EXT", "Galicia" = "GAL",
+  "Madrid, Comunidad de" = "MAD", "Murcia, Región de" = "MUR",
+  "Navarra, Comunidad Foral de" = "NAV", "País Vasco" = "PV", 
+  "Rioja, La" = "RIO", "Ceuta" = "CEU", "Melilla" = "MEL", "Total Nacional" = "TN"
+)
+
+# Crear la columna con abreviaturas en el nuevo data frame
+df_abrev$ComunidadAbrev <- abreviaturas[df_abrev$`Comunidades autónomas`]
+
+hist2 <- ggplot(df_abrev, aes(x =ComunidadAbrev)) + 
+  geom_bar(fill = "salmon") +
+  theme_minimal() +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Comunidades autónomas")
+
+hist3 <- ggplot(Salario, aes(x = `Medidas y percentiles`)) + 
+  geom_bar(fill = "lightgreen") +
+  theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Medidas y percentiles")
+
+# Generar boxplots de variables numéricas
+box1 <- ggplot(Salario, aes(y = Periodo)) + 
+  geom_boxplot(fill = "plum") +
+  theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Periodo")
+
+box2 <- ggplot(Salario, aes(y = Total)) + 
+  geom_boxplot(fill = "lightcoral") +
+  theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Total")
+
+# Combinar los gráficos en una cuadrícula 3x2 usando patchwork
+layout <- (hist1 | hist2 | hist3) / (box1 | box2 | plot_spacer())
+
+# Mostrar el gráfico final
+layout
+
+```
+Como se puede observar para las vaiables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
+
+# Análisis del archivo Salario
+
+Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.
 
 ```{r}
 library(ggplot2)
-library(scales)
+library(plotly)
+#library(scales)
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
 # Crear colores personalizados manualmente
@@ -110,7 +191,7 @@ colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33
                            "#00FFFF", "#FF4500", "#8A2BE2")
 
 # Crear el gráfico
-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
+g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
   geom_line() +
   geom_point() +
   labs(
@@ -120,8 +201,11 @@ ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autóno
   ) +
   scale_color_manual(values = colores_personalizados) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
+
+g1_interactivo<-ggplotly(g1)
+g1_interactivo
 ```
-Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias.
+Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
 Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
 
@@ -129,19 +213,47 @@ Segundo análisis, referido a las discrepancias de género en el salario medio a
 colores_personalizados2 <- c( "#377EB8","#FFC0CB")
                       
 segundo_análisis_A<-Salario[Salario$`Comunidades autónomas`=='Total Nacional'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
+g2<-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel Nacional',
     y = 'Total (€)')
+g2_interactivo<-ggplotly(g2)
+g2_interactivo
 ```
+Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
+
+
 Análisis B
 
 ```{r}
 colores_personalizados3 <- c("#0073B2", "#FF69B4")
 segundo_análisis_B<-Salario[Salario$`Comunidades autónomas`=='Comunitat Valenciana'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
+g3<-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
     y = 'Total (€)')
+g3_interactivo<-ggplotly(g3)
+g3_interactivo
 ```
+En el caso de la Comunidad Valenciana observamos que la tendencia es muy similar a lo que ocurre a nivel nacional. Produciéndose un aumento significativo de los salarios tanto en el caso de las mujeres como en el de los hombres. Además, en el caso de la Comunidad Valenciana, la diferencia de salario entre los hombres y mujeres en el 2022 estaba por debajo de la media nacional.
+
+
+Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
+
+```{r}
+library(tidyr)
+df_filtered<-Salario[Salario$`Comunidades autónomas`!='Total Nacional'&Salario$`Medidas y percentiles`=='Media'& Salario$Sexo!='Ambos sexos',]
+df_filtered<-df_filtered[,!names(df_filtered)%in%'Medidas y percentiles']
+# Empleamos pivot wider para poder hacer la diferencia de manera más sencilla
+df_filtered<-pivot_wider(df_filtered,names_from=Sexo,values_from=Total)
+df_filtered$diferencia<-df_filtered$Hombres-df_filtered$Mujeres
+g4<-ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))+geom_line()+geom_point()+
+ scale_color_manual(values = colores_personalizados) +  # Colores personalizados
+  guides(color = guide_legend(title = NULL))+
+  labs(title = 'Análisis de discrepancias de género por años y comunidades',y='Diferencia (€)')
+g4_interactivo<-ggplotly(g4)
+g4_interactivo
+```
+Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+
 
 # Conclusion
 

@@ -52,7 +52,7 @@ Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALS
 
 Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene. 
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico.Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
-Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor.
+Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
 
 ```{r}
 str(Salario)
@@ -71,12 +71,19 @@ Salario$Total<-as.numeric(Salario$Total)
 #transformamos en un factor
 inter<-as.factor(Salario$`Medidas y percentiles`)
 Salario$`Medidas y percentiles`<-factor(inter,levels = levels(inter),labels = levels(inter))
+# Ahora con la variable sexo
+inter2<-as.factor(Salario$Sexo)
+Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 ```
 
 Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
 ```{r}
 # Por último comprobamos que no tenemos ningún dato perdido
 datos_perdidos_salario<-print(Salario[is.na(Salario)])
+```
+Finalmente guardamos el nuevo fichero con los cambios.
+```{r}
+save(Salario,file = '../data/Salario_clean.csv')
 ```
 
 ```{r}
@@ -229,7 +236,6 @@ ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))
  scale_color_manual(values = colores_personalizados) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))
 ```
-
 # Conclusion
 
 This section is not mandatory, but can be added to the manuscript if the

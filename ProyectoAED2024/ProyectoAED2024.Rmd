@@ -219,6 +219,9 @@ g2<-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(sta
 g2_interactivo<-ggplotly(g2)
 g2_interactivo
 ```
+Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
+
+
 Análisis B
 
 ```{r}
@@ -230,6 +233,8 @@ g3<-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(sta
 g3_interactivo<-ggplotly(g3)
 g3_interactivo
 ```
+En el caso de la Comunidad Valenciana observamos que la tendencia es muy similar a lo que ocurre a nivel nacional. Produciéndose un aumento significativo de los salarios tanto en el caso de las mujeres como en el de los hombres. Además, en el caso de la Comunidad Valenciana, la diferencia de salario entre los hombres y mujeres en el 2022 estaba por debajo de la media nacional.
+
 
 Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
 
@@ -247,6 +252,9 @@ g4<-ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas
 g4_interactivo<-ggplotly(g4)
 g4_interactivo
 ```
+Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+
+
 # Conclusion
 
 This section is not mandatory, but can be added to the manuscript if the

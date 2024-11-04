@@ -30,8 +30,9 @@ library(knitr)
 library(kableExtra)
 library(ggplot2)
 library(scales)
+library(patchwork)
+library(plotly)
 ```
-
 
 # Introduction
 
@@ -118,10 +119,6 @@ kable_styling(kbl(resumen,align = 'c'))
 ```
 Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 ```{r}
-# Cargar librerías necesarias
-library(ggplot2)
-library(patchwork)
-
 # Generar histogramas de variables categóricas
 hist1 <- ggplot(Salario, aes(x = Sexo)) + 
   geom_bar(fill = "skyblue") +
@@ -260,7 +257,7 @@ Como vemos, las comunidades con la menor diferencia de salario medio entre hombr
 
 # Análisis del dataset Vivienda.
 
-```{r vivienda comunidades echo=FALSE}
+```{r vivienda comunidades, echo=FALSE}
 Vivienda_simple<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Variación anual',]
 
 # Crear el gráfico

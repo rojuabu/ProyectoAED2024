@@ -181,7 +181,8 @@ Primeramente, nos centrarems en ver como ha variado el salario medio de cada com
 
 ```{r}
 library(ggplot2)
-library(scales)
+library(plotly)
+#library(scales)
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
 # Crear colores personalizados manualmente
@@ -190,7 +191,7 @@ colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33
                            "#00FFFF", "#FF4500", "#8A2BE2")
 
 # Crear el gráfico
-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
+g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
   geom_line() +
   geom_point() +
   labs(
@@ -200,6 +201,9 @@ ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autóno
   ) +
   scale_color_manual(values = colores_personalizados) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
+
+g1_interactivo<-ggplotly(g1)
+g1_interactivo
 ```
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
@@ -209,18 +213,22 @@ Segundo análisis, referido a las discrepancias de género en el salario medio a
 colores_personalizados2 <- c( "#377EB8","#FFC0CB")
                       
 segundo_análisis_A<-Salario[Salario$`Comunidades autónomas`=='Total Nacional'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
+g2<-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel Nacional',
     y = 'Total (€)')
+g2_interactivo<-ggplotly(g2)
+g2_interactivo
 ```
 Análisis B
 
 ```{r}
 colores_personalizados3 <- c("#0073B2", "#FF69B4")
 segundo_análisis_B<-Salario[Salario$`Comunidades autónomas`=='Comunitat Valenciana'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
+g3<-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
     y = 'Total (€)')
+g3_interactivo<-ggplotly(g3)
+g3_interactivo
 ```
 
 Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
@@ -232,9 +240,12 @@ df_filtered<-df_filtered[,!names(df_filtered)%in%'Medidas y percentiles']
 # Empleamos pivot wider para poder hacer la diferencia de manera más sencilla
 df_filtered<-pivot_wider(df_filtered,names_from=Sexo,values_from=Total)
 df_filtered$diferencia<-df_filtered$Hombres-df_filtered$Mujeres
-ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))+geom_line()+geom_point()+
+g4<-ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))+geom_line()+geom_point()+
  scale_color_manual(values = colores_personalizados) +  # Colores personalizados
-  guides(color = guide_legend(title = NULL))
+  guides(color = guide_legend(title = NULL))+
+  labs(title = 'Análisis de discrepancias de género por años y comunidades',y='Diferencia (€)')
+g4_interactivo<-ggplotly(g4)
+g4_interactivo
 ```
 # Conclusion
 

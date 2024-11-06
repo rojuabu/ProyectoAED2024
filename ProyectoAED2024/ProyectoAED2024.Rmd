@@ -257,11 +257,25 @@ Como vemos, las comunidades con la menor diferencia de salario medio entre hombr
 
 # Análisis del dataset Vivienda.
 
+## Evolución del IPV
+
+El sistema de cálculo del IPV está basado en la combinación de dos elementos básicos que reflejan las características del mercado inmobiliario, y que son esenciales en el cálculo de los índices de precios: los precios de las viviendas, que representan la confluencia de la oferta y la demanda del mercado, y las ponderaciones, o importancia relativa de cada tipología de vivienda según el valor de compra.
+
+La combinación de estos dos elementos para obtener el IPV se realiza mediante la fórmula del índice de Laspeyres encadenado, la misma que se emplea en el cálculo del IPC/IPCA.
+
+Además de la consideración de los dos elementos citados anteriormente, otro de los aspectos relevantes en cualquier índice de precios es el ajuste por el cambio que se produce en la calidad de los bienes cuyos precios se siguen a lo largo del tiempo. Cuando los precios observados corresponden a viviendas, este aspecto es de máxima importancia. En este caso, el seguimiento del precio de una misma vivienda a lo largo del tiempo resulta imposible; de hecho, la composición de la cesta de viviendas utilizada para el cálculo del índice es diferente cada trimestre, ya que está compuesta por las viviendas vendidas en dicho trimestre. Por tanto, si no se ajustan los precios por el cambio en la composición de la muestra o la calidad de las viviendas, la medición de la evolución de los mismos no sería correcta.
+
+Una posible solución es la creación de estratos de viviendas que agrupen aquellas con características similares, y seguir el precio medio de cada estrato en lugar del precio de cada vivienda individualmente para, posteriormente, obtener la evolución conjunta ponderando cada uno de los estratos. En este sentido, es conveniente crear estratos pequeños; ya que cuanto más definida esté la tipología de vivienda, mejor será el ajuste por cambio de calidad y composición.
+
+Por otro lado, para obtener precios medios representativos de cada estrato con los estimadores tradicionales, es necesario disponer de un número mínimo de observaciones por estrato cada trimestre. Esta exigencia obligaría a disminuir el grado de detalle del estrato, reduciendo el número de características que lo definen. Como consecuencia, las viviendas pertenecientes a un mismo estrato podrían no ser tan homogéneas como sería deseable. Por ello, el IPV utiliza modelos de regresión hedónica que permiten la estimación trimestral de precios por estrato, independientemente de que existan o no viviendas pertenecientes al mismo en el trimestre. De esta forma, el número de tipologías consideradas y el grado de detalle en la definición de éstas es mayor, lo que hace mejorar significativamente el ajuste.
+
+A continuación se presenta con mayor detalle el proceso de cálculo del IPV, incidiendo en los aspectos señalados y, de forma especial, en el modelo de regresión utilizado.
+
 ```{r vivienda comunidades, echo=FALSE}
-Vivienda_simple<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Variación anual',]
+Vivienda_simple1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Media anual',]
 
 # Crear el gráfico
-ggplot(Vivienda_simple, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
+ggplotly(ggplot(Vivienda_simple1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
   labs(
@@ -269,7 +283,25 @@ ggplot(Vivienda_simple, aes(x = Periodo, y = Total, color = `Comunidades y Ciuda
     y = 'Índice %',
     color = NULL  # Sin título en la leyenda
   ) +
-  guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
+  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+```
+
+
+## Vivienda nueva y de segunda mano
+
+```{r tipos de vivienda, echo=FALSE}
+Vivienda_simple2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual',]
+
+# Crear el gráfico
+ggplotly(ggplot(Vivienda_simple2, aes(x = Periodo, y = Total, color = `General, vivienda nueva y de segunda mano`)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = 'Evolución del precio medio de la vivienda por Comunidades Autónomas',
+    y = 'Índice %',
+    color = NULL  # Sin título en la leyenda
+  ) +
+  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
 ```
 
 # Conclusion

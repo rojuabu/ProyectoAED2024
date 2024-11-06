@@ -189,7 +189,7 @@ primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo==
 # Crear colores personalizados manualmente
 colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33",                              "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", 
                             "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666", 
-                           "#00FFFF", "#FF4500", "#8A2BE2")
+                           "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
 
 # Crear el gráfico
 g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
@@ -278,27 +278,49 @@ Vivienda_simple1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=
 ggplotly(ggplot(Vivienda_simple1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
+  scale_color_manual(values = colores_personalizados) +
   labs(
-    title = 'Evolución del precio medio de la vivienda por Comunidades Autónomas',
-    y = 'Índice %',
+    title = 'Evolución del IPV por Comunidades Autónomas',
+    y = 'IPV',
+    x = 'Año',
     color = NULL  # Sin título en la leyenda
   ) +
   guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
 ```
-
 
 ## Vivienda nueva y de segunda mano
 
 ```{r tipos de vivienda, echo=FALSE}
 Vivienda_simple2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual',]
 
+colores_personalizados5 <- c("#E41A1C", "#377EB8", "#4DAF4A")
+
 # Crear el gráfico
 ggplotly(ggplot(Vivienda_simple2, aes(x = Periodo, y = Total, color = `General, vivienda nueva y de segunda mano`)) +
   geom_line() +
   geom_point() +
+  scale_color_manual(values = colores_personalizados5) +
   labs(
-    title = 'Evolución del precio medio de la vivienda por Comunidades Autónomas',
-    y = 'Índice %',
+    title = 'Evolución del IPV nacional por tipo de vivienda',
+    y = 'IPV',
+    x = 'Año',
+    color = NULL  # Sin título en la leyenda
+  ) +
+  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+```
+
+```{r tipos de vivienda valencia, echo=FALSE}
+Vivienda_simple3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='10 Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual',]
+
+# Crear el gráfico
+ggplotly(ggplot(Vivienda_simple3, aes(x = Periodo, y = Total, color = `General, vivienda nueva y de segunda mano`)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = colores_personalizados5) +
+  labs(
+    title = 'Evolución del IPV por tipo de vivienda en la Comunitat Valenciana',
+    y = 'IPV',
+    x = 'Año',
     color = NULL  # Sin título en la leyenda
   ) +
   guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda

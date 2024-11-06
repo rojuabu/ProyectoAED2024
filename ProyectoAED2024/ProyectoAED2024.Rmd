@@ -34,6 +34,11 @@ library(patchwork)
 library(plotly)
 ```
 
+```{r limpieza, include=FALSE}
+rm(list = ls())
+```
+
+
 # Introduction
 
 The introduction should briefly place the study in a broad context and highlight
@@ -52,7 +57,6 @@ header.
 # Carga de los archivos
 
 ```{r}
-rm(list = ls())
 # Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
 # Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
@@ -257,25 +261,22 @@ Como vemos, las comunidades con la menor diferencia de salario medio entre hombr
 
 # Análisis del dataset Vivienda.
 
-## Evolución del IPV
+En este dataset se analiza el IPV (Índice de Precios de Vivienda) dependiendo del año, región o tipo de vivienda. Para poder entender correctamente el siguiente análisis, tenemos que explicar brevemente en que consiste el IPV.
 
-El sistema de cálculo del IPV está basado en la combinación de dos elementos básicos que reflejan las características del mercado inmobiliario, y que son esenciales en el cálculo de los índices de precios: los precios de las viviendas, que representan la confluencia de la oferta y la demanda del mercado, y las ponderaciones, o importancia relativa de cada tipología de vivienda según el valor de compra.
+El IPV tiene como principal objetivo medir la evolución del nivel de los precios de compraventa de las viviendas de precio libre, nuevas y de segunda mano, a lo largo del tiempo. Se trata, por tanto, de un indicador concebido únicamente para establecer comparaciones en el tiempo.
 
-La combinación de estos dos elementos para obtener el IPV se realiza mediante la fórmula del índice de Laspeyres encadenado, la misma que se emplea en el cálculo del IPC/IPCA.
+Una vez aclarado el concepto del IPV, pasamos al análisis de nuestro datatset.
 
-Además de la consideración de los dos elementos citados anteriormente, otro de los aspectos relevantes en cualquier índice de precios es el ajuste por el cambio que se produce en la calidad de los bienes cuyos precios se siguen a lo largo del tiempo. Cuando los precios observados corresponden a viviendas, este aspecto es de máxima importancia. En este caso, el seguimiento del precio de una misma vivienda a lo largo del tiempo resulta imposible; de hecho, la composición de la cesta de viviendas utilizada para el cálculo del índice es diferente cada trimestre, ya que está compuesta por las viviendas vendidas en dicho trimestre. Por tanto, si no se ajustan los precios por el cambio en la composición de la muestra o la calidad de las viviendas, la medición de la evolución de los mismos no sería correcta.
+## Evolución del IPV a lo largo de los años por región.
 
-Una posible solución es la creación de estratos de viviendas que agrupen aquellas con características similares, y seguir el precio medio de cada estrato en lugar del precio de cada vivienda individualmente para, posteriormente, obtener la evolución conjunta ponderando cada uno de los estratos. En este sentido, es conveniente crear estratos pequeños; ya que cuanto más definida esté la tipología de vivienda, mejor será el ajuste por cambio de calidad y composición.
-
-Por otro lado, para obtener precios medios representativos de cada estrato con los estimadores tradicionales, es necesario disponer de un número mínimo de observaciones por estrato cada trimestre. Esta exigencia obligaría a disminuir el grado de detalle del estrato, reduciendo el número de características que lo definen. Como consecuencia, las viviendas pertenecientes a un mismo estrato podrían no ser tan homogéneas como sería deseable. Por ello, el IPV utiliza modelos de regresión hedónica que permiten la estimación trimestral de precios por estrato, independientemente de que existan o no viviendas pertenecientes al mismo en el trimestre. De esta forma, el número de tipologías consideradas y el grado de detalle en la definición de éstas es mayor, lo que hace mejorar significativamente el ajuste.
-
-A continuación se presenta con mayor detalle el proceso de cálculo del IPV, incidiendo en los aspectos señalados y, de forma especial, en el modelo de regresión utilizado.
+La principal información que recoge este dataset es el del valor del IPV a lo largo de los años. Así, empezaremos estudiando la evolución del IPV del $2007$ al $2022$. Además, aprovecharemos el hecho de que los datos están seccionados por autonomías, para comparar dicha evolución.
 
 ```{r vivienda comunidades, echo=FALSE}
-Vivienda_simple1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Media anual',]
+#Escogemos los datos necesarios
+Vivienda1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Media anual',]
 
-# Crear el gráfico
-ggplotly(ggplot(Vivienda_simple1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
+#Creamos el gráfico
+ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
   scale_color_manual(values = colores_personalizados) +
@@ -288,43 +289,64 @@ ggplotly(ggplot(Vivienda_simple1, aes(x = Periodo, y = Total, color = `Comunidad
   guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
 ```
 
+Como podemos ver, el IPV sufrió una gran caída a partir del año $2008$, posiblemente por el estallido de la burbuja inmobiliaria. Dicha caída continua hasta frenarse en el año $2015$, donde sigue una subida constante hasta la actualidad.
+
+Respecto a la comparativa por autonomías, vemos como Madrid, Cataluña y Canarias  obtienen los mayores valores del IPV actual, por encima del valor nacional. Por otro lado, Extremadura, Navarra y las castillas tienen el IPV más bajo de todas las comunidades autónomas.
+
+Esta diferencia de valores puede ser motivo de las preferencias del sector turístico, pues Madrid, Cataluña y Canarias son comunidades altamente turísticas, en contraste a las otras comunidades.
+
 ## Vivienda nueva y de segunda mano
 
+El dataset también nos ofrece información sobre la diferencia entre el IPV de viviendas nuevas y de segunda mano.
+
 ```{r tipos de vivienda, echo=FALSE}
-Vivienda_simple2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual',]
+#Escogemos los datos necesarios
+Vivienda2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
 
-colores_personalizados5 <- c("#E41A1C", "#377EB8", "#4DAF4A")
+#Elegimos colores para el gráfico
+col2 <- c("#E41A1C", "#377EB8", "#4DAF4A")
 
-# Crear el gráfico
-ggplotly(ggplot(Vivienda_simple2, aes(x = Periodo, y = Total, color = `General, vivienda nueva y de segunda mano`)) +
-  geom_line() +
-  geom_point() +
-  scale_color_manual(values = colores_personalizados5) +
-  labs(
+#Crear el gráfico
+ggplotly(
+  ggplot(Vivienda2,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
+    geom_bar(stat = "identity",position = 'dodge') +
+    scale_fill_manual(values = col2) +
+    geom_line() +
+    geom_point() +
+    labs(
     title = 'Evolución del IPV nacional por tipo de vivienda',
     y = 'IPV',
     x = 'Año',
-    color = NULL  # Sin título en la leyenda
-  ) +
-  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+    fill = "Tipo de vivienda"
+    )
+  )
 ```
+
+Como podemos observar, $2015$ vuelve a ser un punto de inflexión, pues en este caso pasamos de ver un IPV mayor en las viviendas de segunda mano, a un mayor IPV en las nuevas viviendas.
+
+Nos centramos ahora en la Comunidad Valenciana, donde observamos la siguiente evolución.
 
 ```{r tipos de vivienda valencia, echo=FALSE}
-Vivienda_simple3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='10 Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual',]
+#Escogemos los datos necesarios
+Vivienda3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='10 Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
 
-# Crear el gráfico
-ggplotly(ggplot(Vivienda_simple3, aes(x = Periodo, y = Total, color = `General, vivienda nueva y de segunda mano`)) +
-  geom_line() +
-  geom_point() +
-  scale_color_manual(values = colores_personalizados5) +
-  labs(
-    title = 'Evolución del IPV por tipo de vivienda en la Comunitat Valenciana',
+#Creamos el gráfico
+ggplotly(
+  ggplot(Vivienda3,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
+    geom_bar(stat = "identity",position = 'dodge') +
+    scale_fill_manual(values = col2) +
+    geom_line() +
+    geom_point() +
+    labs(
+    title = 'Evolución del IPV por tipo de vivienda en la Comunidad Valenciana',
     y = 'IPV',
     x = 'Año',
-    color = NULL  # Sin título en la leyenda
-  ) +
-  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+    fill = "Tipo de vivienda"
+    )
+  )
 ```
+
+Como vemos, la Comunidad Valenciana sigue la misma tendencia que el resto de España, aunque en este caso la diferencia entre el IPV de viviendas nuevas y de segunda mano es considerablemente mayor.
 
 # Conclusion
 

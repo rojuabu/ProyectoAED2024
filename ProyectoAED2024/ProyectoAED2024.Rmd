@@ -90,6 +90,7 @@ Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 ```
 
 Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
+
 ```{r}
 # Por último comprobamos que no tenemos ningún dato perdido
 datos_perdidos_salario<-print(Salario[is.na(Salario)])

@@ -32,11 +32,18 @@ library(ggplot2)
 library(scales)
 library(patchwork)
 library(plotly)
+library(lubridate)
+library(corrplot)
+library(skimr)
+library(maps)
+library(mapdata)
+library(mapSpain)
 ```
 
 ```{r limpieza, include=FALSE}
 rm(list = ls())
 ```
+
 
 
 # Introduction
@@ -347,6 +354,135 @@ ggplotly(
 ```
 
 Como vemos, la Comunidad Valenciana sigue la misma tendencia que el resto de España, aunque en este caso la diferencia entre el IPV de viviendas nuevas y de segunda mano es considerablemente mayor.
+
+#Análisis de dato de compra en la ciudad de Valencia por la plataforma Fotocasa
+
+```{r}
+# Leer el dataset 
+fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header = TRUE, sep = ";")
+
+#Primeras filas
+head(fotocasa_compra)
+```
+El dataset presenta datos de la plataforma Fotocasa sobre el precio de compra de viviendas en la ciudad de Valencia. Se presentan datos de precio por metro cuadrado2010 y 2022, con información sobre el distrito, barrio, precio de compra, precio de metro cuadrado, máximos históricos. Las columnas Geo.Point y Geo.Shape contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
+
+```{r}
+#Renombrar columnas
+colnames(fotocasa_compra) <- c("GEO_P","GEO_S", "CODDISTBAR", "CODBAR", "CODDIS", "DISTRITO", "M2_2022", "M2_2010", "M2_MAX", "AÑO_MAX", "BARRIO", "FECHA")
+
+#Drop de columna FECHA
+fotocasa_compra$FECHA <- NULL
+
+fotocasa_compra
+```
+
+```{r}
+#Resumen de la estructura del dataset
+str(fotocasa_compra)
+```
+A la vista de la estructura del dataset, podemos observar que la mayoría de las variables son de tipo numérico, excepto aquellas de coordenadas geográficas que son de tipo character, así como el distrito, el barrio (que deberían transformarse a factor o caracter), la fecha de creación (que debería ser transformada a otra de formato DateTime) y las referentes a coordendas geográficas.  
+
+```{r}
+#Trasformar tipo de CODISTBAR , CODDIS y CODBAR a caracter
+fotocasa_compra$CODDISTBAR <- as.character(fotocasa_compra$CODDISTBAR)
+fotocasa_compra$CODDIS <- as.character(fotocasa_compra$CODDIS)
+fotocasa_compra$CODBAR <- as.character(fotocasa_compra$CODBAR)
+```
+
+```{r}
+summary(fotocasa_compra)
+```
+```{r}
+#Comprobar si hay filas duplicadas
+duplicados <- fotocasa_compra[duplicated(fotocasa_compra),]
+duplicados
+```
+
+No hay filas duplicadas, eso es una buena señal. Ahora vamos a comprobar si hay valores nulos en el dataset.
+
+
+```{r}
+# Exploración de datos faltantes
+colSums(is.na(fotocasa_compra))
+```
+Hay 18 valores nulos en columnas de máximos históricos y precios de metro cuadrado. Vamos a ver que barrios son los que tienen valores nulos y a qué distritos pertenecen. Sabemos que los valores faltantes son referentes a los años y precios de metro cuadrado.
+
+
+```{r}
+#Exponer filas con valores nulos
+fotocasa_compra[!complete.cases(fotocasa_compra),]%>% 
+  group_by(DISTRITO) %>% 
+  summarise(n = n())
+
+```
+
+Parece que todos son barrios pertenecientes al distrito de poblados del norte, sur y oeste. ¿Son todos los barrios del distrito o solo una parte de ellos?
+
+```{r}
+#Agrupar por distrito, solo seleccionar distritos POBLATS DE LOEST, POBLATS DEL NORD, POBLATS DEL SUD
+fotocasa_compra %>% 
+  filter(DISTRITO %in% c("POBLATS DE LOEST", "POBLATS DEL NORD", "POBLATS DEL SUD")) %>% 
+  group_by(DISTRITO) %>% 
+  summarise(n = n())
+```
+Así es, parece que de 3 distritos completos no tendremos datos. Esto supone un gran problema, porque su manejo es un problema. No podemos eliminarlos porque suponen una pérdida importante en la representación del conjunto de datos. El mejor caso sería imputarlos. Si tuviéramos un dato no nulo pertenenciente a algún barrio perteneciente a esos distritos podríamos imputar ese mismo valor para el resto, pero no es el caso. Podemos aproximar el valor mediante barrios adyacentes, pero tampoco sería una representación totalmente fiel. 
+
+Tras esto vamos a comprobar si los valores de precio máximo son los correctos. (Sólo los podemos cotejar con aquellos de los años 2010 y 2022 que son las columnas a las que tenemos acceso).
+
+
+```{r}
+# Comprobar que valores máximos son correctos (no son valores menores a los precios de 2010 y 2022)
+fotocasa_compra %>% 
+  filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
+  group_by(BARRIO) %>% 
+  summarise()
+
+#Mostrar esas filas (solo valores M2_2022, M2_2010 y M2_MAX)
+fotocasa_compra %>% 
+  filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
+  select(BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
+```
+Vemos que hay 9 casos donde el máximo histórico es menor que el precio de 2010 o 2022. Esto puede deberse a un error humano o de recogida de datos. No puede ser un error de registro, pues todos han sido registrados durante el año 2023 y los registros más recientes son del año 2022. 
+¿Cómo podemos imputar estos datos? No podemos asignar el valor máximo de la columna de 2010 o de 2022 porque no sabemos a ciencia cierta si son los valores máximos, al no tener registros de otros años. 
+
+
+## Plots de exploración de datos
+
+```{r}
+# Histograma de todas las variables numéricas (Corregir año, no debe ser numérico)
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>%
+  gather(key = "Variable", value = "Valor") %>%
+  ggplot(aes(x = Valor, fill = Variable)) +
+  geom_histogram(bins = 30, alpha = 0.7) +
+  facet_wrap(~ Variable, scales = "free") +
+  labs(title = "Distribución de Variables Numéricas") +
+  theme_minimal()
+```
+```{r}
+# Boxplot para detectar outliers en cada variable numérica
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>%
+  gather(key = "Variable", value = "Valor") %>%
+  ggplot(aes(x = Variable, y = Valor, fill = Variable))  +
+  geom_boxplot(alpha = 0.7) + 
+  labs(title = "Distribución de Variables Numéricas con Outliers") + 
+  theme_minimal()
+```
+```{r}
+# Análisis de correlación entre variables numéricas
+numeric_data_fotocasa <- fotocasa_compra %>% select(where(is.numeric))
+correlation_matrix <- cor(numeric_data_fotocasa, use = "complete.obs")
+corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.8,
+         title = "Matriz de Correlación de Variables Numéricas")
+```
+```{r}
+
+```
+
+
+
+
 
 # Conclusion
 

@@ -23,6 +23,20 @@ output:
   rticles::mdpi_article:
     extra_dependencies: longtable
 ---
+```{r carga de librerias, include=FALSE}
+library(readr)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(scales)
+library(patchwork)
+library(plotly)
+```
+
+```{r limpieza, include=FALSE}
+rm(list = ls())
+```
+
 
 # Introduction
 
@@ -42,8 +56,6 @@ header.
 # Carga de los archivos
 
 ```{r}
-rm(list = ls())
-library(readr)
 # Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
 # Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
@@ -94,13 +106,12 @@ Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
 ```
 
+
 # Análisis preliminar del fichero Salario.
 
-Primeramente, se observó el conjunto de datos empleando el comando summary. Además se muestra en una tabla el mayor y el menor valor obtenido al realizar este comando de la variable total. 
+Primeramente, se observó el conjunto de datos empleando el comando summary. Además se muestra en una tabla el mayor y el menor valor obtenido al realizar este comando de la variable total.
 
 ```{r}
-library(knitr)
-library(kableExtra)
 resumen_total_salario<-summary(Salario$Total)
 # Buscamos las filas donde se encuentran el máximo y el mínimo  
 max_salario<-Salario[Salario$Total==resumen_total_salario['Max.'],]
@@ -111,10 +122,6 @@ kable_styling(kbl(resumen,align = 'c'))
 ```
 Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 ```{r}
-# Cargar librerías necesarias
-library(ggplot2)
-library(patchwork)
-
 # Generar histogramas de variables categóricas
 hist1 <- ggplot(Salario, aes(x = Sexo)) + 
   geom_bar(fill = "skyblue") +
@@ -180,15 +187,12 @@ Como se puede observar para las vaiables categóricas y,pese a que en el eje x n
 Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.
 
 ```{r}
-library(ggplot2)
-library(plotly)
-#library(scales)
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
 # Crear colores personalizados manualmente
 colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33",                              "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", 
                             "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666", 
-                           "#00FFFF", "#FF4500", "#8A2BE2")
+                           "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
 
 # Crear el gráfico
 g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
@@ -254,6 +258,94 @@ g4_interactivo
 ```
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
 
+# Análisis del dataset Vivienda.
+
+En este dataset se analiza el IPV (Índice de Precios de Vivienda) dependiendo del año, región o tipo de vivienda. Para poder entender correctamente el siguiente análisis, tenemos que explicar brevemente en que consiste el IPV.
+
+El IPV tiene como principal objetivo medir la evolución del nivel de los precios de compraventa de las viviendas de precio libre, nuevas y de segunda mano, a lo largo del tiempo. Se trata, por tanto, de un indicador concebido únicamente para establecer comparaciones en el tiempo.
+
+Una vez aclarado el concepto del IPV, pasamos al análisis de nuestro datatset.
+
+## Evolución del IPV a lo largo de los años por región.
+
+La principal información que recoge este dataset es el del valor del IPV a lo largo de los años. Así, empezaremos estudiando la evolución del IPV del $2007$ al $2022$. Además, aprovecharemos el hecho de que los datos están seccionados por autonomías, para comparar dicha evolución.
+
+```{r vivienda comunidades, echo=FALSE}
+#Escogemos los datos necesarios
+Vivienda1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='General' & Vivienda$`Índices y tasas`=='Media anual',]
+
+#Creamos el gráfico
+ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = colores_personalizados) +
+  labs(
+    title = 'Evolución del IPV por Comunidades Autónomas',
+    y = 'IPV',
+    x = 'Año',
+    color = NULL  # Sin título en la leyenda
+  ) +
+  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+```
+
+Como podemos ver, el IPV sufrió una gran caída a partir del año $2008$, posiblemente por el estallido de la burbuja inmobiliaria. Dicha caída continua hasta frenarse en el año $2015$, donde sigue una subida constante hasta la actualidad.
+
+Respecto a la comparativa por autonomías, vemos como Madrid, Cataluña y Canarias  obtienen los mayores valores del IPV actual, por encima del valor nacional. Por otro lado, Extremadura, Navarra y las castillas tienen el IPV más bajo de todas las comunidades autónomas.
+
+Esta diferencia de valores puede ser motivo de las preferencias del sector turístico, pues Madrid, Cataluña y Canarias son comunidades altamente turísticas, en contraste a las otras comunidades.
+
+## Vivienda nueva y de segunda mano
+
+El dataset también nos ofrece información sobre la diferencia entre el IPV de viviendas nuevas y de segunda mano.
+
+```{r tipos de vivienda, echo=FALSE}
+#Escogemos los datos necesarios
+Vivienda2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
+
+#Elegimos colores para el gráfico
+col2 <- c("#E41A1C", "#377EB8", "#4DAF4A")
+
+#Crear el gráfico
+ggplotly(
+  ggplot(Vivienda2,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
+    geom_bar(stat = "identity",position = 'dodge') +
+    scale_fill_manual(values = col2) +
+    geom_line() +
+    geom_point() +
+    labs(
+    title = 'Evolución del IPV nacional por tipo de vivienda',
+    y = 'IPV',
+    x = 'Año',
+    fill = "Tipo de vivienda"
+    )
+  )
+```
+
+Como podemos observar, $2015$ vuelve a ser un punto de inflexión, pues en este caso pasamos de ver un IPV mayor en las viviendas de segunda mano, a un mayor IPV en las nuevas viviendas.
+
+Nos centramos ahora en la Comunidad Valenciana, donde observamos la siguiente evolución.
+
+```{r tipos de vivienda valencia, echo=FALSE}
+#Escogemos los datos necesarios
+Vivienda3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='10 Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
+
+#Creamos el gráfico
+ggplotly(
+  ggplot(Vivienda3,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
+    geom_bar(stat = "identity",position = 'dodge') +
+    scale_fill_manual(values = col2) +
+    geom_line() +
+    geom_point() +
+    labs(
+    title = 'Evolución del IPV por tipo de vivienda en la Comunidad Valenciana',
+    y = 'IPV',
+    x = 'Año',
+    fill = "Tipo de vivienda"
+    )
+  )
+```
+
+Como vemos, la Comunidad Valenciana sigue la misma tendencia que el resto de España, aunque en este caso la diferencia entre el IPV de viviendas nuevas y de segunda mano es considerablemente mayor.
 
 # Conclusion
 

@@ -53,6 +53,17 @@ Some MDPI journals use Chicago and others use APA, this template should choose
 the correct citation format for you once you specify the journal in the YAML
 header.
 
+# Lista de ideas
+
+* librería vismis (representación de valores faltantes)
+* Discutir y justificar (sí o sí) si imputar o no los datos de Ceuta y Melilla
+* Justificar outliers
+* Añadir cuadro de mandos cuando sea posible
+* Librería arsenal
+* Homogeneizar
+* Estilizar
+* Ratio salario vivienda
+
 # Carga de los archivos
 
 ```{r}

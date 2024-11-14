@@ -38,7 +38,6 @@ library(plotly)
 rm(list = ls())
 ```
 
-
 # Introduction
 
 The introduction should briefly place the study in a broad context and highlight

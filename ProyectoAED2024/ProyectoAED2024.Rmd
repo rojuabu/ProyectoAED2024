@@ -63,6 +63,8 @@ header.
 * Homogeneizar
 * Estilizar
 * Ratio salario vivienda
+* Join
+* Análisis univariante/bivariante
 
 # Carga de los archivos
 
@@ -117,7 +119,6 @@ str(Vivienda)
 Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
 ```
-
 
 # Análisis preliminar del fichero Salario.
 
@@ -192,7 +193,7 @@ layout <- (hist1 | hist2 | hist3) / (box1 | box2 | plot_spacer())
 layout
 
 ```
-Como se puede observar para las vaiables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
+Como se puede observar para las variables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
 
 # Análisis del archivo Salario
 

@@ -34,6 +34,8 @@ library(plotly)
 library(visdat)
 library(dplyr)
 library(tidyr)
+library(gganimate)
+library(mapSpain)
 ```
 
 ```{r limpieza, include=FALSE}
@@ -83,9 +85,14 @@ Salario$Total<-gsub(pattern = '[,]',replacement = '.',Salario$Total)
 # Ahora finalmente hacemos el casteo a numeric
 Salario$Total<-as.numeric(Salario$Total)
 # Además la variable media y percentiles solo puede tener esos valores, por lo que la 
-#transformamos en un factor
-inter<-as.factor(Salario$`Medidas y percentiles`)
-Salario$`Medidas y percentiles`<-factor(inter,levels = levels(inter),labels = levels(inter))
+#transformamos en un factor y por fines visuales lo ordenamos, aunque determinar que valor es mayor si la media o la mediana no tine mucho sentido a nivel estadístico
+Salario$`Medidas y percentiles` <- factor(Salario$`Medidas y percentiles`, 
+                                           levels = c("Percentil 10", "Cuartil inferior",
+                                                      "Mediana","Media", "Cuartil superior", "Percentil 90"), 
+                                           labels = c("Percentil 10", "Cuartil inferior", 
+                                                      "Mediana","Media", "Cuartil superior", "Percentil 90"),
+                                           ordered = TRUE)
+
 # Ahora con la variable sexo
 inter2<-as.factor(Salario$Sexo)
 Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
@@ -145,7 +152,16 @@ tabla_combinada <- tabla_combinada %>%
 
 print(tabla_combinada)
 
+
 ```
+# Variable numérica
+```{r}
+ggplot(Salario, aes(x =`Medidas y percentiles`, y = Total,fill =`Medidas y percentiles`)) +
+  geom_boxplot()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(title = 'Boxplot del salario según percentil')
+```
+
+
+# Revisar esto
 Como se puede observar para las vaiables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
 
 # Análisis del archivo Salario
@@ -175,6 +191,46 @@ g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades aut
 g1_interactivo<-ggplotly(g1)
 g1_interactivo
 ```
+```{r}
+# Descargar el mapa de comunidades autónomas
+mapa_espana <- esp_get_ccaa()
+# Vemos si existen diferencias entre las etiquetas 
+nombres_mapa<-mapa_espana$ine.ccaa.name
+nombres_datos <- unique(primer_analisis$`Comunidades autónomas`)
+nombres_no_coinciden <- setdiff(nombres_datos, nombres_mapa)
+print(nombres_no_coinciden)
+# Unir el mapa con tus datos
+datos_mapa <- mapa_espana %>%
+  left_join(primer_analisis, by = c("ine.ccaa.name" = "Comunidades autónomas"))
+library(ggplot2)
+library(gganimate)
+library(viridis)  # Para una escala de colores visualmente atractiva
+
+# Crear el gráfico animado
+mapa_animado <- ggplot(datos_mapa) +
+  geom_sf(aes(fill = Total), color = "white") +  # Color de las fronteras de las comunidades
+  scale_fill_viridis_c(option = "magma", name = "Salario Medio (€)") +  # Escala de colores
+  theme_minimal() +
+  labs(
+    title = "Evolución del Salario Medio en España ({closest_state})",
+    subtitle = "Datos por Comunidad Autónoma",
+    caption = "Fuente: Tus datos",
+    fill = "Salario (€)"
+  ) +
+  transition_states(Periodo, state_length = 1, wrap = FALSE) +  # Animación por año
+  ease_aes("linear")  # Suaviza las transiciones
+
+# Renderizar el mapa animado
+animate(
+  mapa_animado,
+  nframes = 200,  # Más cuadros
+  fps = 5,        # Menor cantidad de cuadros por segundo
+  width = 800,
+  height = 600
+)
+
+```
+
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
 Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.

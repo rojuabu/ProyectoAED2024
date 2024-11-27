@@ -37,6 +37,10 @@ library(tidyr)
 library(gganimate)
 library(mapSpain)
 library(viridis)  # Para una escala de colores visualmente atractiva
+#remotes::install_github("jthomasmock/gtExtras")
+library(gt)
+library(gtExtras)
+library(shiny)
 ```
 
 ```{r limpieza, include=FALSE}
@@ -131,7 +135,7 @@ tabla_combinada <- bind_rows(
     group_by(Variable = "Comunidades_Autonomas", Valor = `Comunidades autónomas`) %>%
     summarise(Frecuencia = n(), .groups = "drop"),
   Salario %>%
-    group_by(Variable = "Percentiles_Salario", Valor =`Medidas y percentiles`) %>%
+    group_by(Variable = "Percentiles_Salario", Valor = `Medidas y percentiles`) %>%
     summarise(Frecuencia = n(), .groups = "drop")
 )
 
@@ -140,21 +144,114 @@ tabla_combinada <- tabla_combinada %>%
   group_by(Variable) %>%
   mutate(Porcentaje = round(Frecuencia / sum(Frecuencia) * 100, 2))
 
-print(tabla_combinada)
+# Definir un dominio explícito para los valores
+dominio_frecuencia <- range(tabla_combinada$Frecuencia, na.rm = TRUE)
+dominio_porcentaje <- range(tabla_combinada$Porcentaje, na.rm = TRUE)
+
+# Crear y estilizar la tabla con gt y gtExtras
+tabla_combinada %>%
+  gt() %>%
+  gt_theme_espn() %>%  # Aplicar un tema atractivo con gtExtras
+  gt_color_rows(columns = "Frecuencia", palette = "viridis", domain = dominio_frecuencia) %>%  # Aplicar colores a la columna Frecuencia con dominio definido
+  gt_color_rows(columns = "Porcentaje", palette = "viridis", domain = dominio_porcentaje) %>%  # Aplicar colores a la columna Porcentaje con dominio definido
+  tab_header(
+    title = "Frecuencias y Porcentajes por Variable",
+    subtitle = "Distribución de sexo, comunidades autónomas y percentiles de salario"
+  ) %>%
+  fmt_number(
+    columns = Porcentaje,
+    decimals = 2,  # Limitar a dos decimales
+    pattern = "{x}%"  # Añadir el símbolo de porcentaje
+  ) %>%
+  tab_options(
+    table.width = px(700)  # Ajustar el ancho de la tabla
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  )
+
 ```
-# Variable numérica
+Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
+
+# Análisis de las variables numéricas
 ```{r}
 ggplot(Salario, aes(x =`Medidas y percentiles`, y = Total,fill =`Medidas y percentiles`)) +
   geom_boxplot()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(title = 'Boxplot del salario según percentil')
 ```
+Como podemos ver, en casi todos los boxplots aparecen valores atípicos o outliers. Sin embargo, considerando que estamos analizando la evolución de los salarios a lo largo de más de 10 años, estos valores atípicos pueden ser el resultado natural del crecimiento de los salarios durante ese periodo. Además, no observamos valores extremadamente altos o bajos, lo que sugiere que no hay anomalías significativas en los datos, sino simplemente la variabilidad normal de un proceso económico que evoluciona con el tiempo.
+```{r}
+# Crear gráficos de barras con densidad superpuesta
+library(patchwork)  # Para combinar múltiples gráficos
+
+graficos <- lapply(percentiles_levels, function(level) {
+  ggplot(Salario %>% filter(`Medidas y percentiles` == level),
+         aes(x = Total, fill = `Medidas y percentiles`)) +
+    geom_histogram(aes(y = ..density..), fill = "#FF4500", alpha = 0.6, bins = 30) +  # Cambiar color del histograma para contraste y aumentar transparencia
+    geom_density(color = "blue", size = 1, alpha = 0.3) +  # Aumentar transparencia del gráfico de densidad
+    labs(title = level, x = "Total (€)", y = "Densidad") +  # Simplificar el título
+    theme_minimal() +
+    theme(
+      legend.position = "none",  # Eliminar la leyenda
+      plot.title = element_text(size = 10)  # Reducir el tamaño del título
+    )
+})
+
+# Combinar los gráficos
+grafico_final <- wrap_plots(graficos, ncol = 2)
+
+# Mostrar el conjunto de gráficos
+grafico_final
 
 
-# Revisar esto
-Como se puede observar para las vaiables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
+```
+Como podemos observar, las distribuciones no parecen ajustarse a una forma gaussiana en ninguno de los casos. Por eso, para definir la distribución, vamos a usar la mediana y el rango intercuartílico, ya que estas métricas no dependen del tipo de distribución que tengan los datos y son más fiables para describir distribuciones asimétricas o con valores atípicos
+
+```{r}
+# Crear tabla con gt para representar cada percentil con la mediana e IQR
+metricas_percentiles <- Salario %>%
+  group_by(`Medidas y percentiles`) %>%
+  # Empleamos los parámetros robustos frente a la distribución de los datos
+  summarise(
+    Mediana = median(Total, na.rm = TRUE),
+    IQR = IQR(Total, na.rm = TRUE)
+  )
+
+# Crear la tabla utilizando gt
+tabla_metricas <- metricas_percentiles %>%
+  gt() %>%
+  tab_header(
+    title = "Metricas de Salario por Percentil",
+    subtitle = "Mediana y Rango Intercuartílico para cada percentil"
+  ) %>%
+  tab_options(
+    table.width = px(700)  # Ajustamos el ancho de la tabla
+  ) %>%
+  # alineamos el contenido de las columnas
+  cols_align(
+    align = "center",
+    columns = everything()
+  )%>%
+  fmt_number(
+    columns = Mediana,
+    suffixing = TRUE,
+    pattern = "{x} €"
+  )
+
+
+# Mostrar la tabla
+tabla_metricas
+
+```
+A partir de la tabla de las métricas de salario por percentil, podemos observar que los valores de la mediana y del rango intercuartílico (IQR) varían de manera significativa entre los diferentes percentiles. La mediana aumenta progresivamente desde 8.720 € en el percentil 10 hasta 39.090 € en el percentil 90. Esto indica un crecimiento notable de los salarios conforme se avanza a percentiles más altos.
+
+El rango intercuartílico (IQR), que nos muestra la variabilidad en los salarios, también crece a medida que se incrementa el percentil. En los percentiles inferiores, como el cuartil inferior y el percentil 10, los valores del IQR se mantienen relativamente bajos, lo cual sugiere una menor dispersión de los salarios. Sin embargo, al avanzar hacia los percentiles superiores, como el cuartil superior y el percentil 90, el IQR incrementa considerablemente, lo cual refleja una mayor variabilidad en los salarios más altos.
+
+Como este análisis se realiza a lo largo de los años, el hecho de que el rango intercuartílico sea más elevado en los percentiles más altos indica que quienes más han aumentado su salario son los del percentil 90. Además, existen diferencias significativas entre lo que cobra la media de la población y el cuartil inferior, lo cual resalta una mayor desigualdad salarial entre la clase media.
 
 # Análisis del archivo Salario
 
-Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.
+Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio(tomando como referencia 2022) y con menor valor de este. No obstante,en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
 ```{r}
 # Filtrando las comunidades autónomas con el valor de salario medio de 2022
@@ -163,7 +260,7 @@ primer_analisis <- Salario %>%
          Sexo == 'Ambos sexos', 
          `Comunidades autónomas` != 'Total Nacional')
 
-# Seleccionando las dos comunidades con mayor y menor salario medio en el 2022
+# Seleccionando las dos comunidades con mayor y menor salario medio en el 2022 como referencia de la tendencia a lo largo de los años
 comunidades_filtradas <- primer_analisis %>%
   filter(Periodo == 2022) %>%
   slice_max(Total, n = 2) %>%
@@ -183,7 +280,7 @@ g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comu
   geom_line() +
   geom_point() +
   labs(
-    title = 'Evolución del Sueldo Medio en las Comunidades Autónomas con Mayor y Menor Salario Medio (2022)',
+    title = 'Evolución del Sueldo Medio por CC. AA',
     y = 'Total (€)',
     color = NULL  # Sin título en la leyenda
   ) +
@@ -196,6 +293,7 @@ g1
 ```
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
+# Mapa interactivo
 ```{r}
 # Descargar el mapa de comunidades autónomas
 mapa_espana <- esp_get_ccaa()
@@ -238,14 +336,29 @@ animate(
 Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
 
 ```{r}
-colores_personalizados2 <- c( "#377EB8","#FFC0CB")
+colores_personalizados3 <- c( "#377EB8","#FFC0CB")
                       
-segundo_análisis_A<-Salario[Salario$`Comunidades autónomas`=='Total Nacional'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-g2<-ggplot(segundo_análisis_A,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados2)+geom_line()+geom_point()+labs(
+# Filtrando los datos con dplyr
+segundo_análisis_A <- Salario %>%
+  filter(`Comunidades autónomas` == 'Total Nacional',
+         `Medidas y percentiles` == 'Media',
+         Sexo != 'Ambos sexos')
+
+# Creando la gráfica con ggplot2
+g2 <- ggplot(segundo_análisis_A, aes(x = Periodo, y = Total, fill = Sexo)) +
+  geom_bar(stat = "identity", position = 'dodge') +
+  scale_fill_manual(values = colores_personalizados3) +
+  geom_line(aes(group = Sexo, color = Sexo)) +
+  geom_point(aes(color = Sexo)) +
+  labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel Nacional',
-    y = 'Total (€)')
-g2_interactivo<-ggplotly(g2)
-g2_interactivo
+    y = 'Total (€)',
+    x = 'Periodo'
+  ) +
+  theme_minimal()
+
+# Mostrando la gráfica
+g2
 ```
 Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
 
@@ -253,13 +366,29 @@ Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de la
 Análisis B
 
 ```{r}
-colores_personalizados3 <- c("#0073B2", "#FF69B4")
-segundo_análisis_B<-Salario[Salario$`Comunidades autónomas`=='Comunitat Valenciana'& Salario$`Medidas y percentiles`=='Media'&Salario$Sexo!='Ambos sexos',]
-g3<-ggplot(segundo_análisis_B,aes(x=Periodo,y=Total, fill=Sexo)) + geom_bar(stat = "identity",position = 'dodge')+scale_fill_manual(values = colores_personalizados3)+geom_line()+geom_point()+labs(
+colores_personalizados4 <- c("#0073B2", "#FF69B4")
+# Filtrando los datos con dplyr para la Comunitat Valenciana
+segundo_análisis_B <- Salario %>%
+  filter(`Comunidades autónomas` == 'Comunitat Valenciana',
+         `Medidas y percentiles` == 'Media',
+         Sexo != 'Ambos sexos')
+
+# Creando la gráfica con ggplot2 para la Comunitat Valenciana
+g3 <- ggplot(segundo_análisis_B, aes(x = Periodo, y = Total, fill = Sexo)) +
+  geom_bar(stat = "identity", position = 'dodge') +
+  scale_fill_manual(values = colores_personalizados4) +
+  geom_line(aes(group = Sexo, color = Sexo), linetype = "solid") +
+  geom_point(aes(color = Sexo)) +
+  labs(
     title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
-    y = 'Total (€)')
-g3_interactivo<-ggplotly(g3)
-g3_interactivo
+    y = 'Total (€)',
+    x = 'Periodo'
+  ) +
+  theme_minimal()
+
+# Mostrando la gráfica
+g3
+
 ```
 En el caso de la Comunidad Valenciana observamos que la tendencia es muy similar a lo que ocurre a nivel nacional. Produciéndose un aumento significativo de los salarios tanto en el caso de las mujeres como en el de los hombres. Además, en el caso de la Comunidad Valenciana, la diferencia de salario entre los hombres y mujeres en el 2022 estaba por debajo de la media nacional.
 
@@ -267,20 +396,121 @@ En el caso de la Comunidad Valenciana observamos que la tendencia es muy similar
 Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
 
 ```{r}
-library(tidyr)
-df_filtered<-Salario[Salario$`Comunidades autónomas`!='Total Nacional'&Salario$`Medidas y percentiles`=='Media'& Salario$Sexo!='Ambos sexos',]
-df_filtered<-df_filtered[,!names(df_filtered)%in%'Medidas y percentiles']
-# Empleamos pivot wider para poder hacer la diferencia de manera más sencilla
-df_filtered<-pivot_wider(df_filtered,names_from=Sexo,values_from=Total)
-df_filtered$diferencia<-df_filtered$Hombres-df_filtered$Mujeres
-g4<-ggplot(df_filtered,aes(x=Periodo,y=diferencia,color =`Comunidades autónomas` ))+geom_line()+geom_point()+
- scale_color_manual(values = colores_personalizados) +  # Colores personalizados
-  guides(color = guide_legend(title = NULL))+
-  labs(title = 'Análisis de discrepancias de género por años y comunidades',y='Diferencia (€)')
-g4_interactivo<-ggplotly(g4)
-g4_interactivo
+# Filtramos las comunidades autónomas excluyendo "Total Nacional" y seleccionamos solo la media y el sexo que no sea "Ambos sexos"
+df_filtered <- Salario %>%
+  filter(`Comunidades autónomas` != 'Total Nacional', 
+         `Medidas y percentiles` == 'Media', 
+         Sexo != 'Ambos sexos') %>%
+  select(-`Medidas y percentiles`)
+
+# Transformamos los datos para obtener la diferencia entre Hombres y Mujeres
+df_filtered <- df_filtered %>%
+  pivot_wider(names_from = Sexo, values_from = Total) %>%
+  mutate(diferencia = Hombres - Mujeres)
+
+# Filtramos las comunidades con las dos mayores y las dos menores diferencias en el año 2022
+df_filtered_2022 <- df_filtered %>%
+  filter(Periodo == 2022) %>%
+  slice_max(order_by = diferencia, n = 2) %>%
+  bind_rows(slice_min(df_filtered %>% filter(Periodo == 2022), order_by = diferencia, n = 2))
+
+# Filtramos el dataset original para obtener las comunidades seleccionadas
+comunidades_seleccionadas <- df_filtered_2022$`Comunidades autónomas`
+
+df_filtered_final <- df_filtered %>%
+  filter(`Comunidades autónomas` %in% comunidades_seleccionadas)
+
+# Graficamos las diferencias a lo largo de los años
+g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = colores_personalizados2) +  # Colores personalizados
+  guides(color = guide_legend(title = NULL)) +
+  labs(title = 'Análisis de discrepancias de género por años y comunidades',
+       y = 'Diferencia (€)')
+
+print(g4)
+
+
 ```
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+
+```{r}
+colores_personalizados2 <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+# Crear la interfaz de usuario
+ui <- fluidPage(
+  titlePanel("Evolución del Sueldo Medio por CC. AA"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("año", "Selecciona los años a mostrar:",
+                  min = min(primer_analisis$Periodo),
+                  max = max(primer_analisis$Periodo),
+                  value = range(primer_analisis$Periodo),
+                  step = 1,
+                  sep = ""),
+      checkboxGroupInput("comunidades", "Selecciona las Comunidades Autónomas:",
+                         choices = unique(primer_analisis$`Comunidades autónomas`),
+                         selected = unique(primer_analisis$`Comunidades autónomas`))
+    ),
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Evolución del Sueldo Medio", plotOutput("salarioPlot")),
+        tabPanel("Análisis de Discrepancias de Género", plotOutput("discrepanciasGeneroPlot"))
+      )
+    )
+  )
+)
+
+# Definir la lógica del servidor
+server <- function(input, output) {
+  # Pestaña 1: Evolución del Sueldo Medio
+  output$salarioPlot <- renderPlot({
+    # Filtrar los datos según los años y comunidades seleccionadas
+    datos_filtrados <- primer_analisis %>%
+      filter(Periodo >= input$año[1],
+             Periodo <= input$año[2],
+             `Comunidades autónomas` %in% input$comunidades)
+    
+    # Crear el gráfico con los datos filtrados
+    ggplot(datos_filtrados, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
+      geom_line() +
+      geom_point() +
+      labs(
+        title = 'Evolución del Sueldo Medio por CC. AA',
+        y = 'Total (€)',
+        color = NULL  # Sin título en la leyenda
+      ) +
+      scale_color_manual(values = colores_personalizados2) +  # Colores personalizados
+      guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
+  })
+  
+  # Pestaña 2: Análisis de Discrepancias de Género
+  output$discrepanciasGeneroPlot <- renderPlot({
+    # Filtrar los datos para el análisis de discrepancias de género
+    df_filtered <- Salario[Salario$`Comunidades autónomas` != 'Total Nacional' &
+                             Salario$`Medidas y percentiles` == 'Media' &
+                             Salario$Sexo != 'Ambos sexos', ]
+    df_filtered <- df_filtered[, !names(df_filtered) %in% 'Medidas y percentiles']
+    # Emplear pivot_wider para transformar los datos
+    df_filtered <- pivot_wider(df_filtered, names_from = Sexo, values_from = Total)
+    df_filtered$diferencia <- df_filtered$Hombres - df_filtered$Mujeres
+    
+    # Crear el gráfico de discrepancias de género
+    ggplot(df_filtered, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
+      geom_line() +
+      geom_point() +
+      scale_color_manual(values = colores_personalizados2) +  # Colores personalizados
+      guides(color = guide_legend(title = NULL)) +
+      labs(title = 'Análisis de discrepancias de género por años y comunidades', y = 'Diferencia (€)')
+  })
+}
+
+# Ejecutar la aplicación Shiny
+shinyApp(ui = ui, server = server)
+
+
+```
+
 
 # Análisis del dataset Vivienda.
 

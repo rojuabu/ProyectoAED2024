@@ -430,8 +430,6 @@ g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comuni
        y = 'Diferencia (€)')
 
 print(g4)
-
-
 ```
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
 

@@ -36,6 +36,7 @@ library(dplyr)
 library(tidyr)
 library(gganimate)
 library(mapSpain)
+library(viridis)  # Para una escala de colores visualmente atractiva
 ```
 
 ```{r limpieza, include=FALSE}
@@ -119,17 +120,6 @@ Vivienda$Total<-as.numeric(Vivienda$Total)
 
 # Análisis preliminar del fichero Salario.
 
-Primeramente, se observó el conjunto de datos empleando el comando summary. Además se muestra en una tabla el mayor y el menor valor obtenido al realizar este comando de la variable total.
-
-```{r}
-resumen_total_salario<-summary(Salario$Total)
-# Buscamos las filas donde se encuentran el máximo y el mínimo  
-max_salario<-Salario[Salario$Total==resumen_total_salario['Max.'],]
-min_salario<-Salario[Salario$Total==resumen_total_salario['Min.'],]
-resumen<-rbind(max_salario,min_salario)
-row.names(resumen)<-c('Salario máximo','Salario Mínimo')
-kable_styling(kbl(resumen,align = 'c'))
-```
 Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 ```{r}
 # Calcular frecuencias por separado y unirlas en una tabla
@@ -151,8 +141,6 @@ tabla_combinada <- tabla_combinada %>%
   mutate(Porcentaje = round(Frecuencia / sum(Frecuencia) * 100, 2))
 
 print(tabla_combinada)
-
-
 ```
 # Variable numérica
 ```{r}
@@ -169,28 +157,45 @@ Como se puede observar para las vaiables categóricas y,pese a que en el eje x n
 Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.
 
 ```{r}
-primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
+# Filtrando las comunidades autónomas con el valor de salario medio de 2022
+primer_analisis <- Salario %>%
+  filter(`Medidas y percentiles` == 'Media', 
+         Sexo == 'Ambos sexos', 
+         `Comunidades autónomas` != 'Total Nacional')
+
+# Seleccionando las dos comunidades con mayor y menor salario medio en el 2022
+comunidades_filtradas <- primer_analisis %>%
+  filter(Periodo == 2022) %>%
+  slice_max(Total, n = 2) %>%
+  bind_rows(slice_min(primer_analisis %>% filter(Periodo == 2022), Total, n = 2)) %>%
+  select(`Comunidades autónomas`) %>%
+  distinct()
+
+# Filtrando los datos para solo incluir las comunidades seleccionadas
+primer_analisis_filtrado <- primer_analisis %>%
+  filter(`Comunidades autónomas` %in% comunidades_filtradas$`Comunidades autónomas`)
 
 # Crear colores personalizados manualmente
-colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33",                              "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", 
-                            "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666", 
-                           "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00")
 
 # Crear el gráfico
-g1<-ggplot(primer_analisis, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
+g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
   geom_line() +
   geom_point() +
   labs(
-    title = 'Evolución del Sueldo Medio en Comunidades Autónomas',
+    title = 'Evolución del Sueldo Medio en las Comunidades Autónomas con Mayor y Menor Salario Medio (2022)',
     y = 'Total (€)',
     color = NULL  # Sin título en la leyenda
   ) +
   scale_color_manual(values = colores_personalizados) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
 
-g1_interactivo<-ggplotly(g1)
-g1_interactivo
+# Mostrar el gráfico
+g1
+
 ```
+Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
+
 ```{r}
 # Descargar el mapa de comunidades autónomas
 mapa_espana <- esp_get_ccaa()
@@ -202,9 +207,6 @@ print(nombres_no_coinciden)
 # Unir el mapa con tus datos
 datos_mapa <- mapa_espana %>%
   left_join(primer_analisis, by = c("ine.ccaa.name" = "Comunidades autónomas"))
-library(ggplot2)
-library(gganimate)
-library(viridis)  # Para una escala de colores visualmente atractiva
 
 # Crear el gráfico animado
 mapa_animado <- ggplot(datos_mapa) +
@@ -223,15 +225,15 @@ mapa_animado <- ggplot(datos_mapa) +
 # Renderizar el mapa animado
 animate(
   mapa_animado,
-  nframes = 200,  # Más cuadros
-  fps = 5,        # Menor cantidad de cuadros por segundo
+  nframes = 150,  # Más cuadros
+  fps = 10,        # Menor cantidad de cuadros por segundo
   width = 800,
   height = 600
 )
 
 ```
 
-Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
+
 
 Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
 

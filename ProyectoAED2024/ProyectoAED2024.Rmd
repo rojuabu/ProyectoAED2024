@@ -75,8 +75,10 @@ Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE,
 Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 ```
 
-Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene. 
+Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
+
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico.Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
+
 Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
 
 ```{r}
@@ -108,6 +110,7 @@ Además, con el objetivo de ver si existe algún dato faltante se buscó en el f
 datos_perdidos_salario<-print(Salario[is.na(Salario)])
 ```
 Finalmente guardamos el nuevo fichero con los cambios.
+
 ```{r}
 save(Salario,file = '../data/Salario_clean.csv')
 ```

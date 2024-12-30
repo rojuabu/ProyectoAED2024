@@ -183,7 +183,7 @@ Como podemos ver, en casi todos los boxplots aparecen valores atípicos o outlie
 ```{r}
 # Crear gráficos de barras con densidad superpuesta
 library(patchwork)  # Para combinar múltiples gráficos
-
+percentiles_levels<-levels(Salario$`Medidas y percentiles`)
 graficos <- lapply(percentiles_levels, function(level) {
   ggplot(Salario %>% filter(`Medidas y percentiles` == level),
          aes(x = Total, fill = `Medidas y percentiles`)) +

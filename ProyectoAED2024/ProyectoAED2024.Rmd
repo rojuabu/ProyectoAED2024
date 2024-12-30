@@ -420,6 +420,8 @@ comunidades_seleccionadas <- df_filtered_2022$`Comunidades autónomas`
 df_filtered_final <- df_filtered %>%
   filter(`Comunidades autónomas` %in% comunidades_seleccionadas)
 
+colores_personalizados2 <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+
 # Graficamos las diferencias a lo largo de los años
 g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
   geom_line() +
@@ -434,7 +436,6 @@ print(g4)
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
 
 ```{r}
-colores_personalizados2 <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
 # Crear la interfaz de usuario
 ui <- fluidPage(
   titlePanel("Evolución del Sueldo Medio por CC. AA"),
@@ -530,7 +531,7 @@ Vivienda1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='Gener
 ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = colores_personalizados) +
+  scale_color_manual(values = colores_personalizados2) +
   labs(
     title = 'Evolución del IPV por Comunidades Autónomas',
     y = 'IPV',

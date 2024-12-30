@@ -23,6 +23,7 @@ output:
   rticles::mdpi_article:
     extra_dependencies: longtable
 ---
+
 ```{r carga de librerias, include=FALSE}
 library(readr)
 library(knitr)
@@ -75,14 +76,16 @@ header.
 * Join
 * Análisis univariante/bivariante
 
-# Carga de los archivos
+# Carga de los datasets
 
-```{r}
+```{r carga datasets, include=FALSE}
 # Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
 # Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
 Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
 ```
+
+## Carga y ajuste del dataset: Salario
 
 Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
 
@@ -90,7 +93,7 @@ En nuestro caso, para el fichero de salario se detectó que la variable total co
 
 Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
 
-```{r}
+```{r ajuste preliminar de salario, echo=FALSE}
 str(Salario)
 # Como se puede ver el problema de la variable Total es que tiene comas y puntos,
 # pero en R las comas no son interpretadas con la intención del archivo, por lo que
@@ -119,22 +122,46 @@ Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 
 Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
 
-```{r}
+```{r datos faltantes en salario, echo=FALSE}
 # Por último comprobamos que no tenemos ningún dato perdido
 vis_miss(Salario)
 ```
 Finalmente guardamos el nuevo fichero con los cambios.
 
-```{r}
+```{r guardar el nuevo dataset salario, include=FALSE}
 save(Salario,file = '../data/Salario_clean.csv')
 ```
 
-```{r}
+## Carga y ajuste del dataset: Vivienda
+
+```{r ajuste preliminar de vivienda, echo=FALSE, message=FALSE, warning=FALSE}
 str(Vivienda)
 # Aquí de igual manera que arriba debemos cambiar las comas a puntos para poder
 #hacer el casteo a numeric
 Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
+```
+
+```{r datos faltantes en vivienda, echo=FALSE}
+# Por último comprobamos si tenemos algún dato perdido
+vis_miss(Vivienda)
+```
+
+```{r encontrar datos faltantes en vivienda, echo=FALSE}
+# Buscamos dónde están dichos datos faltantes
+unique(Vivienda[is.na(Vivienda$Total),]$`Comunidades y Ciudades Autónomas`)
+unique(Vivienda[is.na(Vivienda$Total),]$`Índices y tasas`)
+unique(Vivienda[is.na(Vivienda$Total),]$`Periodo`)
+```
+
+```{r imputamos los datos faltantes, echo=FALSE}
+
+```
+
+Finalmente guardamos el nuevo fichero con los cambios.
+
+```{r guardar el nuevo dataset vivienda, include=FALSE}
+save(Vivienda,file = '../data/Vivienda_clean.csv')
 ```
 
 # Análisis preliminar del fichero Salario.

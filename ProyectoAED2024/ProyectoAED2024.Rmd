@@ -48,6 +48,18 @@ library(shiny)
 rm(list = ls())
 ```
 
+```{r colores, include=FALSE}
+#Colores para comunidades autónomas
+coloresCCAA <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+
+#Colores para sexo
+coloresHM <- c( "#377EB8","#FFC0CB")
+
+#Colores para tipos de vivienda
+coloresNS <- c( "#ffdb4d","#4DAF4A")
+```
+
+
 # Introduction
 
 The introduction should briefly place the study in a broad context and highlight
@@ -388,10 +400,6 @@ Primeramente, nos centrarems en ver como ha variado el salario medio de cada com
 ```{r}
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
-# Crear colores personalizados manualmente
-colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33",                              "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", 
-                            "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666", 
-                           "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
 # Filtrando las comunidades autónomas con el valor de salario medio de 2022
 primer_analisis <- Salario %>%
   filter(`Medidas y percentiles` == 'Media', 
@@ -410,9 +418,6 @@ comunidades_filtradas <- primer_analisis %>%
 primer_analisis_filtrado <- primer_analisis %>%
   filter(`Comunidades autónomas` %in% comunidades_filtradas$`Comunidades autónomas`)
 
-# Crear colores personalizados manualmente
-colores_personalizados <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00")
-
 # Crear el gráfico
 g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
   geom_line() +
@@ -422,7 +427,7 @@ g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comu
     y = 'Total (€)',
     color = NULL  # Sin título en la leyenda
   ) +
-  scale_color_manual(values = colores_personalizados) +  # Colores personalizados
+  scale_color_manual(values = coloresCCAA) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
 
 # Mostrar el gráfico
@@ -470,13 +475,9 @@ animate(
 
 ```
 
-
-
 Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
 
 ```{r}
-colores_personalizados3 <- c( "#377EB8","#FFC0CB")
-                      
 # Filtrando los datos con dplyr
 segundo_análisis_A <- Salario %>%
   filter(`Comunidades autónomas` == 'Total Nacional',
@@ -486,7 +487,7 @@ segundo_análisis_A <- Salario %>%
 # Creando la gráfica con ggplot2
 g2 <- ggplot(segundo_análisis_A, aes(x = Periodo, y = Total, fill = Sexo)) +
   geom_bar(stat = "identity", position = 'dodge') +
-  scale_fill_manual(values = colores_personalizados3) +
+  scale_fill_manual(values = coloresHM) +
   geom_line(aes(group = Sexo, color = Sexo)) +
   geom_point(aes(color = Sexo)) +
   labs(
@@ -505,7 +506,6 @@ Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de la
 Análisis B
 
 ```{r}
-colores_personalizados4 <- c("#0073B2", "#FF69B4")
 # Filtrando los datos con dplyr para la Comunitat Valenciana
 segundo_análisis_B <- Salario %>%
   filter(`Comunidades autónomas` == 'Comunitat Valenciana',
@@ -515,7 +515,7 @@ segundo_análisis_B <- Salario %>%
 # Creando la gráfica con ggplot2 para la Comunitat Valenciana
 g3 <- ggplot(segundo_análisis_B, aes(x = Periodo, y = Total, fill = Sexo)) +
   geom_bar(stat = "identity", position = 'dodge') +
-  scale_fill_manual(values = colores_personalizados4) +
+  scale_fill_manual(values = coloresHM) +
   geom_line(aes(group = Sexo, color = Sexo), linetype = "solid") +
   geom_point(aes(color = Sexo)) +
   labs(
@@ -559,13 +559,11 @@ comunidades_seleccionadas <- df_filtered_2022$`Comunidades autónomas`
 df_filtered_final <- df_filtered %>%
   filter(`Comunidades autónomas` %in% comunidades_seleccionadas)
 
-colores_personalizados2 <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
-
 # Graficamos las diferencias a lo largo de los años
 g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = colores_personalizados2) +  # Colores personalizados
+  scale_color_manual(values = coloresCCAA) +  # Colores personalizados
   guides(color = guide_legend(title = NULL)) +
   labs(title = 'Análisis de discrepancias de género por años y comunidades',
        y = 'Diferencia (€)')
@@ -668,7 +666,7 @@ Vivienda1<-Vivienda[Vivienda$`General, vivienda nueva y de segunda mano`=='Gener
 ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = colores_personalizados2) +
+  scale_color_manual(values = coloresCCAA) +
   labs(
     title = 'Evolución del IPV por Comunidades Autónomas',
     y = 'IPV',
@@ -690,16 +688,16 @@ El dataset también nos ofrece información sobre la diferencia entre el IPV de 
 
 ```{r tipos de vivienda, echo=FALSE}
 #Escogemos los datos necesarios
-Vivienda2<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Nacional' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
-
-#Elegimos colores para el gráfico
-col2 <- c("#E41A1C", "#377EB8", "#4DAF4A")
+Vivienda2 <- Vivienda %>%
+  filter(`Comunidades y Ciudades Autónomas` == 'Total Nacional',
+         `Índices y tasas`=='Media anual',
+         `General, vivienda nueva y de segunda mano`!='General')
 
 #Crear el gráfico
 ggplotly(
   ggplot(Vivienda2,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
     geom_bar(stat = "identity",position = 'dodge') +
-    scale_fill_manual(values = col2) +
+    scale_fill_manual(values = coloresNS) +
     geom_line() +
     geom_point() +
     labs(
@@ -717,13 +715,13 @@ Nos centramos ahora en la Comunidad Valenciana, donde observamos la siguiente ev
 
 ```{r tipos de vivienda valencia, echo=FALSE}
 #Escogemos los datos necesarios
-Vivienda3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='10 Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
+Vivienda3<-Vivienda[Vivienda$`Comunidades y Ciudades Autónomas`=='Comunitat Valenciana' & Vivienda$`Índices y tasas`=='Media anual' & Vivienda$`General, vivienda nueva y de segunda mano`!='General',]
 
 #Creamos el gráfico
 ggplotly(
   ggplot(Vivienda3,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
     geom_bar(stat = "identity",position = 'dodge') +
-    scale_fill_manual(values = col2) +
+    scale_fill_manual(values = coloresNS) +
     geom_line() +
     geom_point() +
     labs(

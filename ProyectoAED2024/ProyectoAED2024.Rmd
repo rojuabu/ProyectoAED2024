@@ -89,16 +89,20 @@ Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALS
 
 Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
 
-En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico.Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
+```{r str salario, echo=FALSE}
+str(Salario)
+# Como se puede ver el problema de la variable Total es que tiene comas y puntos,
+# pero en R las comas no son interpretadas con la intención del archivo
+```
+
+En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico. Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
 
 Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
 
-```{r ajuste preliminar de salario, echo=FALSE}
-str(Salario)
-# Como se puede ver el problema de la variable Total es que tiene comas y puntos,
-# pero en R las comas no son interpretadas con la intención del archivo, por lo que
-# pasamos a cambiar el formato, y una vez con este correcto hacer un casteo a numérico
+Por último, ajustaremos la columna de comunidades autónomas, pues los nombres de algunas comunidades aparecen fuera de orden.
 
+```{r ajuste preliminar de salario, echo=FALSE}
+# Pasamos a cambiar el formato, y una vez con este correcto hacer un casteo a numérico
 # Primero eliminamos los puntos, que se emplean en el archivo original para hacer la
 #distinción de 1000
 Salario$Total<-gsub(pattern = '[.]',replacement = '',Salario$Total)
@@ -118,6 +122,14 @@ Salario$`Medidas y percentiles` <- factor(Salario$`Medidas y percentiles`,
 # Ahora con la variable sexo
 inter2<-as.factor(Salario$Sexo)
 Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
+
+#Ajustamos los nombres de las comunidades
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Asturias, Principado de"] <- "Principado de Asturias"
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Balears, Illes"] <- "Illes Balears"
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Madrid, Comunidad de"] <- "Comunidad de Madrid"
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Murcia, Región de"] <- "Región de Murcia"
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Navarra, Comunidad Foral de"] <- "Comunidad Foral de Navarra"
+Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Rioja, La"] <- "La Rioja"
 ```
 
 Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
@@ -134,25 +146,63 @@ save(Salario,file = '../data/Salario_clean.csv')
 
 ## Carga y ajuste del dataset: Vivienda
 
-```{r ajuste preliminar de vivienda, echo=FALSE, message=FALSE, warning=FALSE}
+Ejecutamos de nuevo el comando str para ver los tipos de datos existentes en nuestro dataset Vivienda, y si estos son coherentes con la información que almacenan.
+
+```{r str vivienda, echo=FALSE}
 str(Vivienda)
-# Aquí de igual manera que arriba debemos cambiar las comas a puntos para poder
-#hacer el casteo a numeric
+```
+
+Vemos como la variable "Total" que claramente representa un valor de tipo numérico es de tipo str, por lo que tendremos que cambiarla a una variable de tipo numérico.
+
+Además, tanto la variable "General, vivienda nueva y de segunda mano" como "Índices y tasas" tienen un reducido número de valores posibles, por lo que transformaremos estas en factores.
+
+Por último, ajustaremos la columna de comunidades y ciudades autónomas, pues igual que con el anterior dataset, los nombres de algunas comunidades aparecen fuera de orden.
+
+```{r ajuste preliminar de vivienda, echo=FALSE, message=FALSE, warning=FALSE}
+# Aquí de igual manera que arriba debemos cambiar las comas a puntos para poder hacer el casteo a numeric
 Vivienda$Total<-gsub(pattern = '[,]',replacement = '.',Vivienda$Total)
 Vivienda$Total<-as.numeric(Vivienda$Total)
+
+# Transformamos ambas variables "General, vivienda nueva y de segunda mano" y "Índices y tasas" a factores, por sus limitados posibles valores
+Vivienda$`General, vivienda nueva y de segunda mano` <- factor(Vivienda$`General, vivienda nueva y de segunda mano`, 
+                                           levels = c("General", "Vivienda nueva", "Vivienda segunda mano"),
+                                           labels = c("General", "Vivienda nueva", "Vivienda segunda mano"),
+                                           ordered = FALSE)
+
+Vivienda$`Índices y tasas` <- factor(Vivienda$`Índices y tasas`, 
+                                           levels = c("Media anual", "Variación anual"),
+                                           labels = c("Media anual", "Variación anual"),
+                                           ordered = FALSE)
+
+#Ajustamos los nombres de las comunidades y ciudades
+Vivienda$`Comunidades y Ciudades Autónomas` <- substr(Vivienda$`Comunidades y Ciudades Autónomas`, 4, nchar(Vivienda$`Comunidades y Ciudades Autónomas`))
+
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "ional"] <- "Total Nacional"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Asturias, Principado de"] <- "Principado de Asturias"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Balears, Illes"] <- "Illes Balears"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Madrid, Comunidad de"] <- "Comunidad de Madrid"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Murcia, Región de"] <- "Región de Murcia"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Navarra, Comunidad Foral de"] <- "Comunidad Foral de Navarra"
+Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Rioja, La"] <- "La Rioja"
 ```
+
+A continuación, estudiamos la posible existencia de datos faltantes en nuestro dataset.
 
 ```{r datos faltantes en vivienda, echo=FALSE}
 # Por último comprobamos si tenemos algún dato perdido
 vis_miss(Vivienda)
 ```
 
+Como podemos observar, el dataset Vivienda sí tiene algunos datos faltantes en la variable "Total". Estudiamos donde se encuentran estos datos faltantes.
+
 ```{r encontrar datos faltantes en vivienda, echo=FALSE}
 # Buscamos dónde están dichos datos faltantes
-unique(Vivienda[is.na(Vivienda$Total),]$`Comunidades y Ciudades Autónomas`)
-unique(Vivienda[is.na(Vivienda$Total),]$`Índices y tasas`)
-unique(Vivienda[is.na(Vivienda$Total),]$`Periodo`)
+str(Vivienda[is.na(Vivienda$Total),])
 ```
+
+Al parecer, nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla. Podemos lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de inputar valores nuevos.
+
+# FALTA
 
 ```{r imputamos los datos faltantes, echo=FALSE}
 
@@ -257,7 +307,7 @@ Como se puede observar para las variables categóricas y,pese a que en el eje x 
 
 Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
 
-# Análisis de las variables numéricas
+## Análisis de las variables numéricas
 
 ```{r}
 ggplot(Salario, aes(x =`Medidas y percentiles`, y = Total,fill =`Medidas y percentiles`)) +

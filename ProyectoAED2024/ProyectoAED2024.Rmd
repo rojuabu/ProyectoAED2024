@@ -135,13 +135,6 @@ Salario$`Medidas y percentiles` <- factor(Salario$`Medidas y percentiles`,
 inter2<-as.factor(Salario$Sexo)
 Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 
-#Ajustamos los nombres de las comunidades
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Asturias, Principado de"] <- "Principado de Asturias"
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Balears, Illes"] <- "Illes Balears"
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Madrid, Comunidad de"] <- "Comunidad de Madrid"
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Murcia, Región de"] <- "Región de Murcia"
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Navarra, Comunidad Foral de"] <- "Comunidad Foral de Navarra"
-Salario$`Comunidades autónomas`[Salario$`Comunidades autónomas` == "Rioja, La"] <- "La Rioja"
 ```
 
 Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
@@ -230,32 +223,6 @@ save(Vivienda,file = '../data/Vivienda_clean.csv')
 Primeramente, con el propósito de analizar los outliersy las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 
 ```{r}
-# Generar histogramas de variables categóricas
-hist1 <- ggplot(Salario, aes(x = Sexo)) + 
-  geom_bar(fill = "skyblue") +
-  theme_minimal() + 
-   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle("Sexo")
-
-# Para este segundo creamos un df provisional para obtener unas abreviaturas y simplificar
-# la representación 
-# Crear una copia de df y añadir la columna de abreviaturas
-df_abrev <- Salario
-
-# Diccionario de abreviaturas
-abreviaturas <- c(
-  "Andalucía" = "AND", "Aragón" = "AR", "Asturias, Principado de" = "AST",
-  "Balears, Illes" = "BAL", "Canarias" = "CAN", "Cantabria" = "CNT",
-  "Castilla y León" = "CYL", "Castilla - La Mancha" = "CLM", "Cataluña" = "CAT",
-  "Comunitat Valenciana" = "CV", "Extremadura" = "EXT", "Galicia" = "GAL",
-  "Madrid, Comunidad de" = "MAD", "Murcia, Región de" = "MUR",
-  "Navarra, Comunidad Foral de" = "NAV", "País Vasco" = "PV", 
-  "Rioja, La" = "RIO", "Ceuta" = "CEU", "Melilla" = "MEL", "Total Nacional" = "TN")
-```
-
-Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
-
-```{r}
 # Calcular frecuencias por separado y unirlas en una tabla
 tabla_combinada <- bind_rows(
   Salario %>%
@@ -301,8 +268,6 @@ tabla_combinada %>%
     columns = everything()
   )
 ```
-
-Como se puede observar para las variables categóricas y,pese a que en el eje x no podamos distinguirlas bien; en todas ellas las frecuencias son regulares, por lo que no existe evidencia de que haya valores inusualmente frecuentes o infrecuentes. En el caso del periodo vemos que no existe ningún año que aparezca como un dato anómalo,lo que demuestra que no hay presencia de algún año mal etiquetado o erróneo. En el caso de Total, podemos ver que la gran mayoría de los datos se centra en torno a 20000€, y que por tanto se detectan como outliers algunos valores superiores a 50000€. Sin embargo, si nos centramos en el contexto del archivo que estamos analizando, este cuenta con percentiles 90, es decir con el salario de personas que cobran más que el 90 por ciento de la población a nivel nacional o de comunidad en un determinado año. Por tanto, estos valores que se detectan como anómalos no son tales, sino que simplemente son valores elevados que están muy alejados de la media del archivo. Lo interesante es que no observamos ningún 600000€ o ningún 0, datos que carecerían de sentido en este análisis. Por tanto, podemos concluir que en este fichero no aparecen datos anómalos o outliers. 
 
 Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
 
@@ -382,6 +347,8 @@ Como este análisis se realiza a lo largo de los años, el hecho de que el rango
 
 # Análisis del archivo Salario
 
+## Primer análisis
+
 Primeramente, nos centrarems en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio(tomando como referencia 2022) y con menor valor de este. No obstante,en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
 ```{r}
@@ -423,7 +390,7 @@ g1
 
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
-# Mapa interactivo
+## Mapa interactivo
 
 ```{r}
 # Descargar el mapa de comunidades autónomas
@@ -462,7 +429,9 @@ animate(
 
 ```
 
-Segundo análisis, referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
+## Segundo análisis 
+
+Referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
 
 ```{r}
 # Filtrando los datos con dplyr
@@ -490,7 +459,7 @@ g2
 Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
 
 
-Análisis B
+### Análisis B
 
 ```{r}
 # Filtrando los datos con dplyr para la Comunitat Valenciana
@@ -558,7 +527,9 @@ g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comuni
 print(g4)
 ```
 
-Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dado es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dato es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+
+## App interactiva con Shiny 
 
 ```{r}
 # Crear la interfaz de usuario

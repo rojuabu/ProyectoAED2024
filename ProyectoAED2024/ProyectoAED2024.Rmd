@@ -227,20 +227,7 @@ save(Vivienda,file = '../data/Vivienda_clean.csv')
 ```
 
 # Análisis preliminar del fichero Salario.
-
-Primeramente, se observó el conjunto de datos empleando el comando summary. Además se muestra en una tabla el mayor y el menor valor obtenido al realizar este comando de la variable total.
-
-```{r}
-resumen_total_salario<-summary(Salario$Total)
-# Buscamos las filas donde se encuentran el máximo y el mínimo  
-max_salario<-Salario[Salario$Total==resumen_total_salario['Max.'],]
-min_salario<-Salario[Salario$Total==resumen_total_salario['Min.'],]
-resumen<-rbind(max_salario,min_salario)
-row.names(resumen)<-c('Salario máximo','Salario Mínimo')
-kable_styling(kbl(resumen,align = 'c'))
-```
-
-Seguidamente, con el objetivo de analizar los outliers se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
+Primeramente, con el propósito de analizar los outliersy las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 
 ```{r}
 # Generar histogramas de variables categóricas

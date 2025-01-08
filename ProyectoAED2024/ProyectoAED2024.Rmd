@@ -38,6 +38,8 @@ library(skimr)
 library(maps)
 library(mapdata)
 library(mapSpain)
+library(tidyverse)
+library(tidyterra)
 ```
 
 ```{r limpieza, include=FALSE}
@@ -397,6 +399,7 @@ A la vista de la estructura del dataset, podemos observar que la mayoría de las
 fotocasa_compra$CODDISTBAR <- as.character(fotocasa_compra$CODDISTBAR)
 fotocasa_compra$CODDIS <- as.character(fotocasa_compra$CODDIS)
 fotocasa_compra$CODBAR <- as.character(fotocasa_compra$CODBAR)
+fotocasa_compra$AÑO_MAX <- as.character(fotocasa_compra$AÑO_MAX)
 ```
 
 ```{r}
@@ -435,15 +438,70 @@ fotocasa_compra %>%
   group_by(DISTRITO) %>% 
   summarise(n = n())
 ```
-Así es, parece que de 3 distritos completos no tendremos datos. Esto supone un gran problema, porque su manejo es un problema. No podemos eliminarlos porque suponen una pérdida importante en la representación del conjunto de datos. El mejor caso sería imputarlos. Si tuviéramos un dato no nulo pertenenciente a algún barrio perteneciente a esos distritos podríamos imputar ese mismo valor para el resto, pero no es el caso. Podemos aproximar el valor mediante barrios adyacentes, pero tampoco sería una representación totalmente fiel.
+```{r}
+#Exponer distritos POBLATS DE LOEST, POBLATS DEL NORD, POBLATS DEL SUD, con variables de precio
+fotocasa_compra %>% 
+  filter(DISTRITO %in% c("POBLATS DE LOEST", "POBLATS DEL NORD", "POBLATS DEL SUD")) %>% 
+  select(DISTRITO,BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
+
+```
+
+
+
+Así es, parece que de 3 distritos completos no tendremos datos. Esto supone un gran problema, porque su manejo es un problema. No podemos eliminarlos porque suponen una pérdida importante en la representación del conjunto de datos. El mejor caso sería imputarlos. Si tuviéramos un dato no nulo pertenenciente a algún barrio dentro de esos distritos podríamos imputar ese mismo valor para el resto, pero no es el caso. Podemos aproximar el valor mediante barrios adyacentes, pero tampoco sería una representación totalmente fiel.
+
+Como solución, se procede a imputar los valores faltantes del año 2022 mediante los datos presentados en el portal de búsqueda de inmuebles de Indomio (https://www.indomio.es/mercado-inmobiliario/comunitat-valenciana/valencia-capital/). Se ha tomado como referencia el máximo del año.
+Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos barrios con un precio por metro cuadrado similar al de los barrios con valores faltantes en 2022.
+
+
+
+```{r}
+# Mostrar media de precio por distrito, filtrado entre 1300 y 1450
+fotocasa_compra %>% 
+  group_by(DISTRITO) %>% 
+  summarise(M2_2022 = mean(M2_2022)) %>%  filter(M2_2022 < 1450) 
+```
+Vemos que el distrito que más se asemeja es el de L'olivereta con 1401 €/m2. Vamos a imputar los valores faltantes de 2022 con este valor.
+En resumen, los valores finales son:
+
+* POBLATS DEL SUD: 2022 <- 1399 €/m2 , 2010 <- 1401 €/m2
+* POBLATS DEL NORD: 2022 <- 1352 €/m2, 2010 <- 1401 €/m2
+* POBLATS DE LOEST: 2022 <- 1386 €/m2, 2010 <- 1401 €/m2
+
+```{r}
+#Insertar valores faltantes correspondientemente
+fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DEL SUD"] <- 1399
+fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DEL NORD"] <- 1352
+fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DE LOEST"] <- 1386
+fotocasa_compra$M2_2010[fotocasa_compra$DISTRITO %in% c("POBLATS DEL SUD", "POBLATS DEL NORD", "POBLATS DE LOEST")] <- 1401
+
+# Seleccionar precio máximo entre las dos variables y escribirlo en M2_MAX y el año en AÑO_MAX
+fotocasa_compra$M2_MAX <- pmax(fotocasa_compra$M2_2022, fotocasa_compra$M2_2010)
+fotocasa_compra$AÑO_MAX <- ifelse(fotocasa_compra$M2_MAX == fotocasa_compra$M2_2022, "2022", "2010")
+```
+
+```{r}
+#Resultado
+fotocasa_compra %>% 
+  filter(DISTRITO %in% c("POBLATS DE LOEST", "POBLATS DEL NORD", "POBLATS DEL SUD")) %>% 
+  select(DISTRITO,BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
+```
+
 
 Tras esto vamos a comprobar si los valores de precio máximo son los correctos. (Sólo los podemos cotejar con aquellos de los años 2010 y 2022 que son las columnas a las que tenemos acceso).
+
+
+
 ```{r}
 # Comprobar que valores máximos son correctos (no son valores menores a los precios de 2010 y 2022)
 fotocasa_compra %>% 
   filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
   group_by(BARRIO) %>% 
   summarise()
+
+
+```
+```{r}
 #Mostrar esas filas (solo valores M2_2022, M2_2010 y M2_MAX)
 fotocasa_compra %>% 
   filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
@@ -452,7 +510,8 @@ fotocasa_compra %>%
  
 Vemos que hay 9 casos donde el máximo histórico es menor que el precio de 2010 o 2022. Esto puede deberse a un error humano o de recogida de datos. No puede ser un error de registro, pues todos han sido registrados durante el año 2023 y los registros más recientes son del año 2022. 
 
-¿Cómo podemos imputar estos datos? No podemos asignar el valor máximo de la columna de 2010 o de 2022 porque no sabemos a ciencia cierta si son los valores máximos, al no tener registros de otros años. 
+¿Cómo podemos imputar estos datos? No sería correcto asignar el valor máximo de la columna de 2010 o de 2022 porque no sabemos a ciencia cierta si son los valores máximos, al no tener registros de otros años. Si trabajáramos con otras fuentes de información sería posible hacer una imputación más precisa, pero en este caso no es posible. **Terminar de corregir**
+
  
 ## Plots de exploración de datos
 ```{r}
@@ -466,7 +525,7 @@ fotocasa_compra %>%
   labs(title = "Distribución de Variables Numéricas") +
   theme_minimal()
 ```
-
+Viendo estos resultados, podemos observar que los precios de compra y de metro cuadrado están en una escala muy diferente a los máximos históricos. La distribución de los precios de 2010 son bastante más homogéneos. 
 ```{r}
 # Boxplot para detectar outliers en cada variable numérica
 fotocasa_compra %>% 
@@ -485,6 +544,29 @@ correlation_matrix <- cor(numeric_data_fotocasa, use = "complete.obs")
 corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.8,
          title = "Matriz de Correlación de Variables Numéricas")
 ```
+
+
+```{r}
+valencia <- esp_get_munic_siane(munic = "^València$", epsg = 3857)
+
+valencia_mask <- esp_getTiles(valencia, "IDErioja.Claro",
+  mask = TRUE, crop = TRUE, zoommin = 1
+)
+
+
+ggplot() +
+  geom_spatraster_rgb(data = valencia_mask) +
+  theme_void() +
+  labs(
+    title = "Mapa Base de Valencia",
+    caption = "CC BY 4.0 www.iderioja.org"
+  )
+
+#Plot in map of valencia values of 
+
+
+```
+
 
 
 # Conclusion

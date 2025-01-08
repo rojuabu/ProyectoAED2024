@@ -59,7 +59,6 @@ coloresHM <- c( "#377EB8","#FFC0CB")
 coloresNS <- c( "#ffdb4d","#4DAF4A")
 ```
 
-
 # Introduction
 
 The introduction should briefly place the study in a broad context and highlight
@@ -158,17 +157,25 @@ save(Salario,file = '../data/Salario_clean.csv')
 
 ## Carga y ajuste del dataset: Vivienda
 
-Ejecutamos de nuevo el comando str para ver los tipos de datos existentes en nuestro dataset Vivienda, y si estos son coherentes con la información que almacenan.
+A continuación, estudiaremos el contenido del dataset Vivienda formado por 1920 registros de 5 variables. 
+
+### Variables en el dataset
+
+Empecemos estudiando las variables presentes en el dataset. Ejecutamos el comando str para ver los tipos de datos existentes, y si estos son coherentes con la información que almacenan.
 
 ```{r str vivienda, echo=FALSE}
 str(Vivienda)
 ```
 
-Vemos como la variable "Total" que claramente representa un valor de tipo numérico es de tipo str, por lo que tendremos que cambiarla a una variable de tipo numérico.
+En primer lugar, tenemos la variable `Comunidades y Ciudades Autónomas`, donde se almacenan los distintos nombres de las comunidades y ciudades autónomas españolas. Esta variable es de tipo `string`, lo cual es adecuado.
 
-Además, tanto la variable "General, vivienda nueva y de segunda mano" como "Índices y tasas" tienen un reducido número de valores posibles, por lo que transformaremos estas en factores.
+A continuación, tenemos la variable `General, vivienda nueva y de segunda mano`, una variable que recoge tres tipos distintos de vivienda, general, nueva y de segunda mano. A pesar de que esta variable es de tipo `string`, la cambiaremos a una variable de tipo `factor`, pues es una variable que solo puede tener tres valores distintos fijos.
 
-Por último, ajustaremos la columna de comunidades y ciudades autónomas, pues igual que con el anterior dataset, los nombres de algunas comunidades aparecen fuera de orden.
+La variable `Índices y tasas` es similar, indicando si los datos se refieren a índices o tasas. De igual manera, transformaremos esta variable de `string` a `factor`.
+
+En la variable `Periodo` se encuentran los años de 2007 a 2021. Es de tipo `numeric`, y aunque podríamos cambiarla a tipo `date`, no es realmente necesario.
+
+Por último, `Total` tiene valores exclusivamente numéricos, y con decimales indicados por una coma. Debido a la lectura de la coma como un carácter, esta variable ha sido registrada como un dato `string`. Sustituiremos la coma por un punto y transformaremos esta variable a `numeric`.
 
 ```{r ajuste preliminar de vivienda, echo=FALSE, message=FALSE, warning=FALSE}
 # Aquí de igual manera que arriba debemos cambiar las comas a puntos para poder hacer el casteo a numeric
@@ -198,6 +205,8 @@ Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Au
 Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Rioja, La"] <- "La Rioja"
 ```
 
+### Datos faltantes
+
 A continuación, estudiamos la posible existencia de datos faltantes en nuestro dataset.
 
 ```{r datos faltantes en vivienda, echo=FALSE}
@@ -214,11 +223,9 @@ str(Vivienda[is.na(Vivienda$Total),])
 
 Al parecer, nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla. Podemos lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de inputar valores nuevos.
 
-# FALTA
+En nuestro caso, dado que los datos son proporcionados por la INE, y posiblemente sean calculados a partir de una enorme cantidad y factores que no están a nuestra disposición, optaremos por dejar los datos tal y como están, aunque esto nos prive de analizar los distintos tipos de vivienda en las ciudades autónomas.
 
-```{r imputamos los datos faltantes, echo=FALSE}
-
-```
+### Fin del análisis
 
 Finalmente guardamos el nuevo fichero con los cambios.
 

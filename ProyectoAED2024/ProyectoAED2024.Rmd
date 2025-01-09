@@ -61,31 +61,7 @@ coloresNS <- c( "#ffdb4d","#4DAF4A")
 
 # Introduction
 
-The introduction should briefly place the study in a broad context and highlight
-why it is important. It should define the purpose of the work and its
-significance. The current state of the research field should be reviewed
-carefully and key publications cited. Please highlight controversial and
-diverging hypotheses when necessary. Finally, briefly mention the main aim of
-the work and highlight the principal conclusions. As far as possible, please
-keep the introduction comprehensible to scientists outside your particular
-field of research. Citing a journal paper [@bertrand-krajewski_distribution_1998;
-@leutnant_stormwater_2016]. And now citing a book reference @gujer_systems_2008.
-Some MDPI journals use Chicago and others use APA, this template should choose
-the correct citation format for you once you specify the journal in the YAML
-header.
-
-# Lista de ideas
-
-* librería vismis (representación de valores faltantes)
-* Discutir y justificar (sí o sí) si imputar o no los datos de Ceuta y Melilla
-* Justificar outliers
-* Añadir cuadro de mandos cuando sea posible
-* Librería arsenal
-* Homogeneizar
-* Estilizar
-* Ratio salario vivienda
-* Join
-* Análisis univariante/bivariante
+En este proyecto se pretende trabajar con distintos datasets de vivienda y salario en Esapaña, con el objetivo de destacar las relaciones existentes entre ambos. Para ello, se realizará un análisis exploratorio inicial de los datasets, se procesarán adecuadamente y se realizarán análisis explicativos de ellos, para poder ver como han evolucionado estas variables tanto de manera individual como conjuntamente.
 
 # Carga de los datasets
 
@@ -406,7 +382,7 @@ Como se puede observar, las comunidades con mayor salario medio son el País Vas
 
 ## Mapa interactivo
 
-```{r mapa salario, echo=FALSE}
+```{r mapa salario, echo=FALSE,eval=FALSE}
 # Descargar el mapa de comunidades autónomas
 mapa_espana <- esp_get_ccaa()
 # Vemos si existen diferencias entre las etiquetas 
@@ -649,7 +625,7 @@ ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ci
 
 Si bien ya podemos visualizar tendencias y sacar conclusiones en este gráfico, el siguiente mapa ayudara a afinar dichas conclusiones.
 
-```{r mapa vivienda, echo=FALSE}
+```{r mapa vivienda, echo=FALSE,eval=FALSE}
 #Eliminamos el total nacional
 ViviendaMapa <- Vivienda %>%
   filter(`General, vivienda nueva y de segunda mano`=='General', 
@@ -774,7 +750,7 @@ ggplotly(
 
 Para finalizar nuestro análisis de los datos del IPV en España, creamos la siguiente aplicación que permite observar con mayor claridad, y de manera personalizada, los gráficos presentados.
 
-```{r app salario, echo=FALSE}
+```{r app vivienda, echo=FALSE}
 # Crear la interfaz de usuario
 ui_vivienda <- fluidPage(
   titlePanel("Evolución del IPV por CCAA"),

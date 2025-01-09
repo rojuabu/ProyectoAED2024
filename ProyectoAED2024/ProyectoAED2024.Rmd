@@ -8,7 +8,7 @@ author:
 type: article
 # front matter
 simplesummary: |
-  Con tal de poner a prueba nuestros conocimientos de análisis exploratorio de datos, analizaremos detenidamente dos datasets sobre el valor de la vivienda española y el salario medio en España.
+  Con tal de poner a prueba nuestros conocimientos de análisis exploratorio de datos, analizaremos detenidamente datasets sobre el valor de la vivienda española, el salario medio en España y el precio por metro cuadrado en la ciudad de Valencia.
 abstract: |
   Aquí ponemos el abstract.
 # back matter
@@ -367,7 +367,9 @@ ggplotly(
 
 Como vemos, la Comunidad Valenciana sigue la misma tendencia que el resto de España, aunque en este caso la diferencia entre el IPV de viviendas nuevas y de segunda mano es considerablemente mayor.
 
-#Análisis de dato de compra en la ciudad de Valencia por la plataforma Fotocasa
+#Análisis de precio por metro cuadrado en compra de pisos en la ciudad de Valencia por la plataforma Fotocasa
+
+En este último apartado del trabajo, se procede a examinar la evolución del precio de metro cuadrado en la compra de pisos en la ciudad de Valencia en los años de 2010 y 2022 y comparar posteriormente cuanto supone la inversión respecto al salario medio de la comunidad Valenciana.
 
 ```{r}
 # Leer el dataset
@@ -376,15 +378,18 @@ fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header =
 head(fotocasa_compra)
 ```
  
-El dataset presenta datos de la plataforma Fotocasa sobre el precio de compra de viviendas en la ciudad de Valencia. Se presentan datos de precio por metro cuadrado2010 y 2022, con información sobre el distrito, barrio, precio de compra, precio de metro cuadrado, máximos históricos. Las columnas Geo.Point y Geo.Shape contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
+El conjunto de datos de la plataforma Fotocasa responde al precio del metro cuadrado compra de viviendas en la ciudad de Valencia. Se presentan datos de precio en los años de 2010 y 2022, con información sobre el distrito, barrio, precio de metro cuadrado y máximos históricos. Las columnas Geo.Point y Geo.Shape contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
+
+El primer paso consiste en renombrar las columnas a nombres más sencillos y fáciles de trabajar, asi como eliminar la columna de fecha, que no aporta información relevante para el análisis.
  
 ```{r}
-#Renombrar columnas
-colnames(fotocasa_compra) <- c("GEO_P","GEO_S", "CODDISTBAR", "CODBAR", "CODDIS", "DISTRITO", "M2_2022", "M2_2010", "M2_MAX", "AÑO_MAX", "BARRIO", "FECHA")
- 
 #Drop de columna FECHA
-fotocasa_compra$FECHA <- NULL
+fotocasa_compra$Fecha_creacion <- NULL
+
+#Renombrar columnas
+colnames(fotocasa_compra) <- c("GEO_P","GEO_S", "CODDISTBAR", "CODBAR", "CODDIS", "DISTRITO", "M2_2022", "M2_2010", "M2_MAX", "AÑO_MAX", "BARRIO")
 fotocasa_compra
+
 ```
 
 ```{r}
@@ -392,19 +397,21 @@ fotocasa_compra
 str(fotocasa_compra)
 ```
 
-A la vista de la estructura del dataset, podemos observar que la mayoría de las variables son de tipo numérico, excepto aquellas de coordenadas geográficas que son de tipo character, así como el distrito, el barrio (que deberían transformarse a factor o caracter), la fecha de creación (que debería ser transformada a otra de formato DateTime) y las referentes a coordendas geográficas.
+A la vista de la estructura del dataset, se observa que la mayoría de las variables son de tipo numérico, excepto aquellas de coordenadas geográficas que son de tipo character, así como el distrito, el barrio o el año (siendo estas tres últimas convertibles a caracter o factor) y las referentes a coordendas geográficas.
  
 ```{r}
 #Trasformar tipo de CODISTBAR , CODDIS y CODBAR a caracter
 fotocasa_compra$CODDISTBAR <- as.character(fotocasa_compra$CODDISTBAR)
 fotocasa_compra$CODDIS <- as.character(fotocasa_compra$CODDIS)
 fotocasa_compra$CODBAR <- as.character(fotocasa_compra$CODBAR)
-fotocasa_compra$AÑO_MAX <- as.character(fotocasa_compra$AÑO_MAX)
 ```
+
 
 ```{r}
 summary(fotocasa_compra)
 ```
+La mayoría de las variables son de tipo numérico, así que aquellas únicamente numéricas contínuas son las del precio en los años de 2010, 2022 y máximos históricos. No obstante, antes de analizar con las métricas de resumen, hay que realizar un análisis de valores faltantes y duplicados, así como la presencia de valores anómalos que puedan afectar al posterior análisis.
+
 
 ```{r}
 #Comprobar si hay filas duplicadas
@@ -412,14 +419,14 @@ duplicados <- fotocasa_compra[duplicated(fotocasa_compra),]
 duplicados
 ```
 
-No hay filas duplicadas, eso es una buena señal. Ahora vamos a comprobar si hay valores nulos en el dataset.
+No existen filas duplicadas dentro del conjunto de datos. Ahora se procede a comprobar si hay valores nulos en el mismo.
 
 ```{r}
 # Exploración de datos faltantes
 colSums(is.na(fotocasa_compra))
 ```
 
-Hay 18 valores nulos en columnas de máximos históricos y precios de metro cuadrado. Vamos a ver que barrios son los que tienen valores nulos y a qué distritos pertenecen. Sabemos que los valores faltantes son referentes a los años y precios de metro cuadrado.
+Hay 18 valores nulos en columnas de máximos históricos y precios de metro cuadrado. Se verifica que barrios son los que tienen valores nulos y a qué distritos pertenecen. Se sabe que los valores faltantes son referentes a los años y precios de metro cuadrado.
 
 ```{r}
 #Exponer filas con valores nulos
@@ -429,7 +436,7 @@ fotocasa_compra[!complete.cases(fotocasa_compra),]%>%
  
 ```
 
-Parece que todos son barrios pertenecientes al distrito de poblados del norte, sur y oeste. ¿Son todos los barrios del distrito o solo una parte de ellos?
+Parece que todos son barrios pertenecientes al distrito de poblados del norte, sur y oeste. Cabe responder a la pregunta de si hay distritos completos sin datos o solamente son barrios sueltos dentro de esos distritos.
  
 ```{r}
 #Agrupar por distrito, solo seleccionar distritos POBLATS DE LOEST, POBLATS DEL NORD, POBLATS DEL SUD
@@ -448,7 +455,7 @@ fotocasa_compra %>%
 
 
 
-Así es, parece que de 3 distritos completos no tendremos datos. Esto supone un gran problema, porque su manejo es un problema. No podemos eliminarlos porque suponen una pérdida importante en la representación del conjunto de datos. El mejor caso sería imputarlos. Si tuviéramos un dato no nulo pertenenciente a algún barrio dentro de esos distritos podríamos imputar ese mismo valor para el resto, pero no es el caso. Podemos aproximar el valor mediante barrios adyacentes, pero tampoco sería una representación totalmente fiel.
+Como resultado se observa que de 3 distritos completos no tendremos datos. Esto supone un gran problema, porque su manejo es un problema. No podemos eliminarlos porque suponen una pérdida importante en la representación del conjunto de datos. El mejor caso sería imputarlos. Si tuviéramos un dato no nulo pertenenciente a algún barrio dentro de esos distritos podríamos imputar ese mismo valor para el resto, pero no es el caso. Podemos aproximar el valor mediante barrios adyacentes, pero tampoco sería una representación totalmente fiel.
 
 Como solución, se procede a imputar los valores faltantes del año 2022 mediante los datos presentados en el portal de búsqueda de inmuebles de Indomio (https://www.indomio.es/mercado-inmobiliario/comunitat-valenciana/valencia-capital/). Se ha tomado como referencia el máximo del año.
 Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos barrios con un precio por metro cuadrado similar al de los barrios con valores faltantes en 2022.
@@ -474,10 +481,6 @@ fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DEL SUD"] <- 1399
 fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DEL NORD"] <- 1352
 fotocasa_compra$M2_2022[fotocasa_compra$DISTRITO == "POBLATS DE LOEST"] <- 1386
 fotocasa_compra$M2_2010[fotocasa_compra$DISTRITO %in% c("POBLATS DEL SUD", "POBLATS DEL NORD", "POBLATS DE LOEST")] <- 1401
-
-# Seleccionar precio máximo entre las dos variables y escribirlo en M2_MAX y el año en AÑO_MAX
-fotocasa_compra$M2_MAX <- pmax(fotocasa_compra$M2_2022, fotocasa_compra$M2_2010)
-fotocasa_compra$AÑO_MAX <- ifelse(fotocasa_compra$M2_MAX == fotocasa_compra$M2_2022, "2022", "2010")
 ```
 
 ```{r}
@@ -488,32 +491,68 @@ fotocasa_compra %>%
 ```
 
 
-Tras esto vamos a comprobar si los valores de precio máximo son los correctos. (Sólo los podemos cotejar con aquellos de los años 2010 y 2022 que son las columnas a las que tenemos acceso).
+Tras esto, se ratifica si los valores de precio máximo son los correctos. Solo los podemos cotejar con aquellos de los años 2010 y 2022 que son las columnas a las que tenemos acceso, pero aún así, el valor debería ser mínimo que aquellos dos presentados durante esos dos años.
 
 
 
 ```{r}
-# Comprobar que valores máximos son correctos (no son valores menores a los precios de 2010 y 2022)
+# Comprobar que valores máximos son mayores que los de 2010 y 2022
 fotocasa_compra %>% 
   filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
-  group_by(BARRIO) %>% 
-  summarise()
-
+  select(BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
 
 ```
+ 
+Se examina 9 casos donde el máximo histórico es menor que el precio de 2010 o 2022. Esto puede deberse a un error humano o de recogida de datos. No puede ser un error de registro, pues todos han sido registrados durante el año 2023 y los registros más recientes son del año 2022. 
+
+Una vez más salta la pregunta de cómo corregir estos errores en la obtención de los datos. No sería lo más acertado asignar el valor máximo de la columna de 2010 o de 2022 porque no sabemos a ciencia cierta si son los valores máximos al no tener registros de otros años. Una solución consistiría en buscar información cotejada de otras fuentes fiables sobre los valores oportunos o reclamar a la fuente de los datos para que corrijan los errores y presente un conjunto de datos más consistente.
+
+Para este caso, y con el objetivo de corregir lo máximo el conjunto de datos, se cambia el valor máximo por el valor más alto de los dos años, 2010 y 2022. Así además se termina de imputar los datos faltantes de los tres distritos con valores nulos
+
 ```{r}
-#Mostrar esas filas (solo valores M2_2022, M2_2010 y M2_MAX)
+# Seleccionar precio máximo entre las dos variables y escribirlo en M2_MAX y el año en AÑO_MAX
+fotocasa_compra$M2_MAX <- pmax(fotocasa_compra$M2_2022, fotocasa_compra$M2_2010)
+fotocasa_compra$AÑO_MAX <- ifelse(fotocasa_compra$M2_MAX == fotocasa_compra$M2_2022, "2022", "2010")
+```
+
+```{r}
 fotocasa_compra %>% 
   filter(M2_MAX < M2_2010 | M2_MAX < M2_2022) %>% 
   select(BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
 ```
- 
-Vemos que hay 9 casos donde el máximo histórico es menor que el precio de 2010 o 2022. Esto puede deberse a un error humano o de recogida de datos. No puede ser un error de registro, pues todos han sido registrados durante el año 2023 y los registros más recientes son del año 2022. 
 
-¿Cómo podemos imputar estos datos? No sería correcto asignar el valor máximo de la columna de 2010 o de 2022 porque no sabemos a ciencia cierta si son los valores máximos, al no tener registros de otros años. Si trabajáramos con otras fuentes de información sería posible hacer una imputación más precisa, pero en este caso no es posible. **Terminar de corregir**
+```{r}
+#Resultado
+fotocasa_compra %>% 
+  filter(DISTRITO %in% c("POBLATS DE LOEST", "POBLATS DEL NORD", "POBLATS DEL SUD")) %>% 
+  select(DISTRITO,BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
+```
+Con esto finalizamos el análisis de valores nulos e incongruencias en el conjunto de datos. Para el próximo apartado se procede al análisis de los datos (anomalías entre otras ocurrencia) y a la visualización de los mismos para continuar con la línea investigativa del trabajo.
 
  
 ## Plots de exploración de datos
+
+```{r}
+# Boxplot para detectar outliers en cada variable numérica
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>%
+  gather(key = "Precio_m2", value = "Euros") %>%
+  ggplot(aes(x = Precio_m2, y = Euros, fill = Precio_m2))  +
+  geom_boxplot(alpha = 0.7) + 
+  labs(title = "Boxplot de precios por metro cuadrado") + 
+  theme_minimal()
+```
+```{r}
+#Media, mediana y desviación estándar de las variables numéricas, por filar y ordenadas
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>% 
+  summarise_all(list(mean = mean, median = median, sd = sd)) %>% 
+  gather(key = "Variable", value = "Valor", -1) %>% 
+  arrange(Variable)
+  
+```
+
+
 ```{r}
 # Histograma de todas las variables numéricas (Corregir año, no debe ser numérico)
 fotocasa_compra %>% 
@@ -526,23 +565,14 @@ fotocasa_compra %>%
   theme_minimal()
 ```
 Viendo estos resultados, podemos observar que los precios de compra y de metro cuadrado están en una escala muy diferente a los máximos históricos. La distribución de los precios de 2010 son bastante más homogéneos. 
-```{r}
-# Boxplot para detectar outliers en cada variable numérica
-fotocasa_compra %>% 
-  select(where(is.numeric)) %>%
-  gather(key = "Variable", value = "Valor") %>%
-  ggplot(aes(x = Variable, y = Valor, fill = Variable))  +
-  geom_boxplot(alpha = 0.7) + 
-  labs(title = "Distribución de Variables Numéricas con Outliers") + 
-  theme_minimal()
-```
+
 
 ```{r}
 # Análisis de correlación entre variables numéricas
 numeric_data_fotocasa <- fotocasa_compra %>% select(where(is.numeric))
 correlation_matrix <- cor(numeric_data_fotocasa, use = "complete.obs")
 corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.8,
-         title = "Matriz de Correlación de Variables Numéricas")
+         title = "Matriz de Correlación")
 ```
 
 

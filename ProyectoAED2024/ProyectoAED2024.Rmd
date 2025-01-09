@@ -392,6 +392,7 @@ fotocasa_compra
 
 ```
 
+
 ```{r}
 #Resumen de la estructura del dataset
 str(fotocasa_compra)
@@ -570,12 +571,6 @@ fotocasa_compra %>%
   select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
 
 ```
-```{r}
-fotocasa_compra %>% 
-  filter(DISTRITO == "CAMPANAR") %>%
-  select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
-```
-
 El barrio resultantes es El pla del, del distrito de L'eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
 
 ```{r}
@@ -646,17 +641,9 @@ fotocasa_compra %>%
   scale_fill_manual(values = c("red", "green"), labels = c("Disminución", "Aumento"))
 
 ```
-Los distritos que han experimentado un mayor aumento de precio son los distritos de Ciutat Vella, L'Eixample y El Pla del Real. Por otro lado, los distritos de Poblats del Sud, Benimaclet y Rascanya han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad y al casco antiguo en el caso de las dos primeras. Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística.
+Los distritos que han experimentado un mayor aumento de precio son los distritos de Quatre Carreres, L'Eixample y Poblats Marítims. Por otro lado, los distritos de Poblats del Nord, Campanar y Benicalap han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica una vez más que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad (L'Eixample), tienen barrios cercanos al centro (Quatre Carrerer) o están cerca del paseo marítimo (Poblats Marítims). Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística; como es el caso de Benicalap o Poblats del Nord. Aun así resalta el descenso de precios en Campanar, una zona bien comunicada y con buenos servicios, en los que destacar los barrios de Campanar propiamente o El Calvari. 
 
-```{r}
-#Diagrama de dispersion
-fotocasa_compra %>% 
-  ggplot(aes(x = M2_2010, y = M2_2022, color = DISTRITO)) +
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-  labs(title = "Comparativa de precios por metro cuadrado en 2010 y 2022", x = "Precio por metro cuadrado en 2010", y = "Precio por metro cuadrado en 2022") +
-  theme_minimal()
-```
+
 
 
 

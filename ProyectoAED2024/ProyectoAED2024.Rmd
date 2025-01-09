@@ -39,7 +39,7 @@ library(maps)
 library(mapdata)
 library(mapSpain)
 library(tidyverse)
-library(tidyterra)
+library(forcats)
 ```
 
 ```{r limpieza, include=FALSE}
@@ -524,13 +524,12 @@ fotocasa_compra %>%
 ```{r}
 #Resultado
 fotocasa_compra %>% 
-  filter(DISTRITO %in% c("POBLATS DE LOEST", "POBLATS DEL NORD", "POBLATS DEL SUD")) %>% 
   select(DISTRITO,BARRIO, M2_2022, M2_2010, M2_MAX, AÑO_MAX)
 ```
 Con esto finalizamos el análisis de valores nulos e incongruencias en el conjunto de datos. Para el próximo apartado se procede al análisis de los datos (anomalías entre otras ocurrencia) y a la visualización de los mismos para continuar con la línea investigativa del trabajo.
 
  
-## Plots de exploración de datos
+## Análisis univariable
 
 ```{r}
 # Boxplot para detectar outliers en cada variable numérica
@@ -543,15 +542,41 @@ fotocasa_compra %>%
   theme_minimal()
 ```
 ```{r}
-#Media, mediana y desviación estándar de las variables numéricas, por filar y ordenadas
+#Media las variables numéricas, por filar y ordenadas
 fotocasa_compra %>% 
   select(where(is.numeric)) %>% 
-  summarise_all(list(mean = mean, median = median, sd = sd)) %>% 
-  gather(key = "Variable", value = "Valor", -1) %>% 
-  arrange(Variable)
+  summarise_all(mean, na.rm = TRUE) %>% 
+  gather(key = "Variable", value = "Valor") %>% 
+  arrange(Valor)
+
   
 ```
+```{r}
+#Valores máximos y mínimos de las variables numéricas
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>% 
+  summarise_all(range, na.rm = TRUE) %>% 
+  gather(key = "Variable", value = "Valor") %>% 
+  arrange(Valor)
+```
+Del resultado de la gráfica de caja y bigotes podemos observar que la tendencia evolutiva de los precios a sido a la alza. La media para el año de 2010 fue de 1677,193€/m2, mientras que para el año 2022 fue de 1959,330€/m2. El precio máximo histórico fue de 2022.193€/m2 en el año 2022, mientras que el precio mínimo fue de 1677.193€/m2 en el año 2010. Esto supone un incremento de 282.137€/m2 en 12 años. El diagrama también muestra que el primer cuartil es similar en ambos años, mientras que el tercer cuartil es mayor en el año 2022. Esto indica que la distribución de los precios de 2022 es más dispersa que la de 2010. Esto se nota aún más en los máximos y mínimos. Los valores de 2010 se centraban en el rango de los 1162€/m2 a los 2455€/m2, mientras que en 2022 se centran en el rango de los 1103€/m2 a los 4029€/m2. Sorprende la presencia de valores tan altos en 2022, duplicando el precio máximo de 2010 en casi un 60%. Por otro lado, los mínimos de ambos años son muy similares, lo que indica que los precios mínimos no han variado mucho en estos 12 años.   
 
+Como observación, en el año 2022 existe un dato anómalo que se aleja mucho del resto de los datos. Este valor anómalo es el precio de 4029€/m2. Este valor es un 60% mayor que el precio máximo de 2010. Se comprueba qué barrio es y a que distrito pertenece.
+
+```{r}
+#Seleccionar filas con valores máximos del 2022
+fotocasa_compra %>% 
+  filter(M2_2022 == 4029) %>%
+  select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
+
+```
+```{r}
+fotocasa_compra %>% 
+  filter(DISTRITO == "CAMPANAR") %>%
+  select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
+```
+
+El barrio resultantes es El pla del, del distrito de L'eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
 
 ```{r}
 # Histograma de todas las variables numéricas (Corregir año, no debe ser numérico)
@@ -564,38 +589,77 @@ fotocasa_compra %>%
   labs(title = "Distribución de Variables Numéricas") +
   theme_minimal()
 ```
-Viendo estos resultados, podemos observar que los precios de compra y de metro cuadrado están en una escala muy diferente a los máximos históricos. La distribución de los precios de 2010 son bastante más homogéneos. 
+Viendo estos resultados, se presencia las mismas observaciones que nos deja el análisis del diagrama de caja. Los precios de 2010 siguen una distribución más uniforme en un rango más cerrado entre los 1162€/m2 y los 2455€/m2. Por otro lado, los precios de 2022 se dispersan más, con un rango de 1103€/m2 a 4029€/m2, reafirmando una vez más la evolución a la alza de los precios. No obstante, cabe mencionar la similitud entre los histogramas de máximos históricos y precios de 2022. Esto indica que los precios máximos de 2022 se han disparado y apuntalando a ser los máximos históricos alcanzados a la misma vez.
 
+Tras este análisis, se procede a realizar un análisis de correlación entre las variables numéricas para ver si existe alguna relación entre ellas. Para ellos se dispone de la matriz de correlación.
+
+## Análisis univariable (por distrito)
+
+Uno de los aspectos más relevantes comparativamente es agrupar los precios por distrito y ver cómo ha evolucionado el precio por metro cuadrado en cada uno de ellos. Se realiza gráfico de barras para ver la evolución de los precios en los años 2010 y 2022.
 
 ```{r}
 # Análisis de correlación entre variables numéricas
 numeric_data_fotocasa <- fotocasa_compra %>% select(where(is.numeric))
 correlation_matrix <- cor(numeric_data_fotocasa, use = "complete.obs")
-corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.8,
+corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.7,
          title = "Matriz de Correlación")
 ```
+A la vista de los resultados de la matriz, se renueva la idea de que los precios de 2022 y los máximos históricos guardan relación, al ver que el índice de correlación es prácticamente de 1. Esto indica que los precios máximos de 2022 son los máximos históricos y que en comparativa con el 2010, el precio por metro cuadrado ha aumentado considerablemente como promedio entre todos los distritos de la ciudad de Valencia.
 
 
 ```{r}
-valencia <- esp_get_munic_siane(munic = "^València$", epsg = 3857)
-
-valencia_mask <- esp_getTiles(valencia, "IDErioja.Claro",
-  mask = TRUE, crop = TRUE, zoommin = 1
-)
-
-
-ggplot() +
-  geom_spatraster_rgb(data = valencia_mask) +
-  theme_void() +
-  labs(
-    title = "Mapa Base de Valencia",
-    caption = "CC BY 4.0 www.iderioja.org"
-  )
-
-#Plot in map of valencia values of 
-
+# Gráfico de barras de la media de precios por metro cuadrado en los años 2010 y 2022 por distrito, rotar etiquetas y ordenar de mayor a menor
+fotocasa_compra %>% 
+  group_by(DISTRITO) %>% 
+  summarise(M2_2010 = mean(M2_2010), M2_2022 = mean(M2_2022)) %>% 
+  gather(key = "Año", value = "Precio_m2", M2_2010, M2_2022) %>% 
+  ggplot(aes(x = reorder(DISTRITO, Precio_m2), y = Precio_m2, fill = Año)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Precio medio por metro cuadrado en 2010 y 2022 por distrito", x = "Distrito", y = "Precio por metro cuadrado") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+```{r}
+#Contar número de medias que han sido superadas en 2022
+fotocasa_compra %>% 
+  group_by(DISTRITO) %>% 
+  summarise(M2_2010 = mean(M2_2010), M2_2022 = mean(M2_2022)) %>% 
+  filter(M2_2022 > M2_2010) %>% 
+  nrow()
+```
+Aunque la tendencia del precio ha sido de aumentar, al cotejar los distintos distritos observamos que en la mayoría de los casos no han sido así. En un total de 12 distritos de los 19, el precio medio por metro cuadrado en 2022 ha superado al de 2010. 
+
+
+```{r}
+#Gráfica de barras del porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 para cada distrito
+fotocasa_compra %>% 
+  group_by(DISTRITO) %>% 
+  summarise(M2_2010 = mean(M2_2010), M2_2022 = mean(M2_2022)) %>% 
+  mutate(Porcentaje = ((M2_2022 - M2_2010) / M2_2010) * 100) %>% 
+  ggplot(aes(x = reorder(DISTRITO, Porcentaje), y = Porcentaje, fill = Porcentaje > 0)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 por distrito", x = "Distrito", y = "Porcentaje") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("red", "green"), labels = c("Disminución", "Aumento"))
+
+```
+Los distritos que han experimentado un mayor aumento de precio son los distritos de Ciutat Vella, L'Eixample y El Pla del Real. Por otro lado, los distritos de Poblats del Sud, Benimaclet y Rascanya han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad y al casco antiguo en el caso de las dos primeras. Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística.
+
+```{r}
+#Diagrama de dispersion
+fotocasa_compra %>% 
+  ggplot(aes(x = M2_2010, y = M2_2022, color = DISTRITO)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  labs(title = "Comparativa de precios por metro cuadrado en 2010 y 2022", x = "Precio por metro cuadrado en 2010", y = "Precio por metro cuadrado en 2022") +
+  theme_minimal()
+```
+
+
+
 
 
 

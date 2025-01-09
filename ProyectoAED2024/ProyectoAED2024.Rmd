@@ -731,7 +731,7 @@ ViviendaDiff <- Vivienda[Vivienda$`Comunidades y Ciudades Autónomas` != 'Total 
                          Vivienda$`General, vivienda nueva y de segunda mano` != 'General',]
 # Emplear pivot_wider para transformar los datos
 ViviendaDiff <- pivot_wider(ViviendaDiff, names_from = `General, vivienda nueva y de segunda mano`, values_from = Total)
-ViviendaDiff$Diferencia <- ViviendaDiff$`Vivienda nueva` - datos_filtrados_vivienda_NS$`Vivienda segunda mano`
+ViviendaDiff$Diferencia <- ViviendaDiff$`Vivienda nueva` - ViviendaDiff$`Vivienda segunda mano`
 
 # Graficamos las diferencias a lo largo de los años
 ggplotly(
@@ -801,15 +801,15 @@ server_vivienda <- function(input, output) {
   # Pestaña 2: Análisis de Discrepancias de Género
   output$NSViviendaPlot <- renderPlot({
     # Filtrar los datos para el análisis de discrepancias de género
-    datos_filtrados_vivienda_NS <- Vivienda[Vivienda$`Comunidades y Ciudades Autónomas` != 'Total Nacional' &
+    ViviendaDiff <- Vivienda[Vivienda$`Comunidades y Ciudades Autónomas` != 'Total Nacional' &
                              Vivienda$`Índices y tasas` == 'Media anual' &
                              Vivienda$`General, vivienda nueva y de segunda mano` != 'General', ]
     # Emplear pivot_wider para transformar los datos
-    datos_filtrados_vivienda_NS <- pivot_wider(datos_filtrados_vivienda_NS, names_from = `General, vivienda nueva y de segunda mano`, values_from = Total)
-    datos_filtrados_vivienda_NS$Diferencia <- datos_filtrados_vivienda_NS$`Vivienda nueva` - datos_filtrados_vivienda_NS$`Vivienda segunda mano`
+    ViviendaDiff <- pivot_wider(ViviendaDiff, names_from = `General, vivienda nueva y de segunda mano`, values_from = Total)
+    ViviendaDiff$Diferencia <- ViviendaDiff$`Vivienda nueva` - ViviendaDiff$`Vivienda segunda mano`
     
     # Crear el gráfico de discrepancias de género
-    ggplot(datos_filtrados_vivienda_NS, aes(x = Periodo, y = Diferencia, color = `Comunidades y Ciudades Autónomas`)) +
+    ggplot(ViviendaDiff, aes(x = Periodo, y = Diferencia, color = `Comunidades y Ciudades Autónomas`)) +
       geom_line() +
       geom_point() +
       scale_color_manual(values = coloresCCAA) +  # Colores personalizados

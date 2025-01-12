@@ -588,7 +588,7 @@ Viendo estos resultados, se presencia las mismas observaciones que nos deja el a
 
 Tras este análisis, se procede a realizar un análisis de correlación entre las variables numéricas para ver si existe alguna relación entre ellas. Para ellos se dispone de la matriz de correlación.
 
-## Análisis univariable (por distrito)
+## Análisis por distritos (vibariable)
 
 Uno de los aspectos más relevantes comparativamente es agrupar los precios por distrito y ver cómo ha evolucionado el precio por metro cuadrado en cada uno de ellos. Se realiza gráfico de barras para ver la evolución de los precios en los años 2010 y 2022.
 
@@ -597,9 +597,9 @@ Uno de los aspectos más relevantes comparativamente es agrupar los precios por 
 numeric_data_fotocasa <- fotocasa_compra %>% select(where(is.numeric))
 correlation_matrix <- cor(numeric_data_fotocasa, use = "complete.obs")
 corrplot(correlation_matrix, method = "color", type = "upper", tl.cex = 0.7,
-         title = "Matriz de Correlación")
+         title = "Matriz de Correlación", addCoef.col = "black")
 ```
-A la vista de los resultados de la matriz, se renueva la idea de que los precios de 2022 y los máximos históricos guardan relación, al ver que el índice de correlación es prácticamente de 1. Esto indica que los precios máximos de 2022 son los máximos históricos y que en comparativa con el 2010, el precio por metro cuadrado ha aumentado considerablemente como promedio entre todos los distritos de la ciudad de Valencia.
+A la vista de los resultados de la matriz, se renueva la idea de que los precios de 2022 y los máximos históricos guardan relación, al ver que el índice de correlación es prácticamente de 1. Esto indica que los precios máximos de 2022 son los máximos históricos y que en comparativa con el 2010, el precio por metro cuadrado ha aumentado considerablemente como promedio entre la ciudad de Valencia. Aun así, la correlación entre los precios de 2010 y 2022 es de 0.74, lo que puede indicar que existan ciertos barrios o distritos donde la tendencia ha sido a la baja. Cabe estudiar estos casos para dar una respuesta más concreta. 
 
 
 ```{r}
@@ -628,22 +628,91 @@ Aunque la tendencia del precio ha sido de aumentar, al cotejar los distintos dis
 
 
 ```{r}
-#Gráfica de barras del porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 para cada distrito
+#Gráfica de barras del porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 para cada distrito, con el valor en cada barra y colores rojo para aumento y verde para disminucion
 fotocasa_compra %>% 
   group_by(DISTRITO) %>% 
-  summarise(M2_2010 = mean(M2_2010), M2_2022 = mean(M2_2022)) %>% 
+  summarise(M2_2010 = mean(M2_2010, na.rm = TRUE), M2_2022 = mean(M2_2022, na.rm = TRUE)) %>% 
   mutate(Porcentaje = ((M2_2022 - M2_2010) / M2_2010) * 100) %>% 
   ggplot(aes(x = reorder(DISTRITO, Porcentaje), y = Porcentaje, fill = Porcentaje > 0)) +
   geom_bar(stat = "identity") +
-  labs(title = "Porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 por distrito", x = "Distrito", y = "Porcentaje") +
+  geom_text(aes(label = sprintf("%.1f%%", Porcentaje)), 
+            position = position_stack(vjust = 0.5), 
+            size = 2.5, 
+            color = "black") +
+  labs(title = "Porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 por distrito", 
+       x = "Distrito", 
+       y = "Porcentaje") +
+  scale_fill_manual(values = c("green", "red"), labels = c("Disminución", "Aumento")) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_manual(values = c("red", "green"), labels = c("Disminución", "Aumento"))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Los distritos que han experimentado un mayor aumento de precio son los distritos de Quatre Carreres (63,1%), L'Eixample (58,3%) y Poblats Marítims (39,1%). Por otro lado, los distritos de Poblats del Nord (3,5%), Campanar (10,7%) y Benicalap (20,5%) han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica una vez más que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad (L'Eixample), tienen barrios cercanos al centro (Quatre Carrerer) o están cerca del paseo marítimo (Poblats Marítims). Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística; como es el caso de Benicalap o Poblats del Nord. Aun así resalta el descenso de precios en Campanar, una zona bien comunicada y con buenos servicios, en los que destacar los barrios de Campanar propiamente o El Calvari. 
+
+
+## Análisis por barrios (vibariable)
+
+Como hincapié a este análisis, se puede hacer un enfoque en el cambio de precios para cada barrio y comprobar si la tendencia es la misma que en los distritos a los que pertenece. Para ello vamos a observar los casos de los 10 primeros barrios con mayor aumento y los 10 primeros con mayor descenso de precio por metro cuadrado.
+
+```{r}
+fotocasa_compra_high <- fotocasa_compra %>%
+  mutate(DIF_BARRIO = ((M2_2022 - M2_2010) / M2_2010) * 100) %>%
+  arrange(desc(DIF_BARRIO)) %>%  # Ordenar de mayor a menor porcentaje
+  slice_head(n = 10)  # Seleccionar los 10 primeros barrios
+
+
+ggplot(fotocasa_compra_high, aes(x = reorder(BARRIO, DIF_BARRIO), y = DIF_BARRIO, fill = DIF_BARRIO > 0, )) +
+    geom_text(aes(label = sprintf("%.1f%%", DIF_BARRIO)), 
+            vjust = -0.5, size = 3) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Porcentaje de aumento por metro cuadrado",
+    x = "Barrio",
+    y = "Porcentaje"
+  ) +
+  scale_fill_manual(values = "red", labels = "Aumento") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+#Ver los distritos a los que pertenece los 10 barrios con mayor aumento de precio
+fotocasa_compra_high %>% 
+  select(DISTRITO, BARRIO, Porcentaje_barr)
 
 ```
-Los distritos que han experimentado un mayor aumento de precio son los distritos de Quatre Carreres, L'Eixample y Poblats Marítims. Por otro lado, los distritos de Poblats del Nord, Campanar y Benicalap han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica una vez más que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad (L'Eixample), tienen barrios cercanos al centro (Quatre Carrerer) o están cerca del paseo marítimo (Poblats Marítims). Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística; como es el caso de Benicalap o Poblats del Nord. Aun así resalta el descenso de precios en Campanar, una zona bien comunicada y con buenos servicios, en los que destacar los barrios de Campanar propiamente o El Calvari. 
+Vemos que para los 10 barrios con mayor aumento todos pertenecen a distritos cuya diferencia de precios fue de un aumento, como es el caso de Quatre Carreres, L'Eixample o Extramurs. Se destaca el barrio de Ciutat de les Arts i les Ciències con un aumento de del 126,24%, muy por encima incluso del segundo barrio (El Pla del Real) con un aumento del 91,31%, casi una diferencia de 35 puntos porcentuales. 
+
+```{r}
+fotocasa_compra_low <- fotocasa_compra %>%
+  mutate(DIF_BARRIO = ((M2_2022 - M2_2010) / M2_2010) * 100) %>%
+  arrange(desc(DIF_BARRIO)) %>%  # Ordenar de mayor a menor porcentaje
+  slice_tail(n = 10)  
 
 
+ggplot(fotocasa_compra_low, aes(x = reorder(BARRIO, DIF_BARRIO), y = DIF_BARRIO, fill = DIF_BARRIO < 0)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f%%", DIF_BARRIO)), 
+            vjust = -0.5, size = 3) +
+  labs(
+    title = "Porcentaje de aumento por metro cuadrado",
+    x = "Barrio",
+    y = "Porcentaje"
+  ) +
+  scale_fill_manual(values ="green", labels = "Disminución") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+
+#Ver los distritos a los que pertenece los 10 barrios con mayor aumento de precio
+fotocasa_compra_low %>% 
+  select(DISTRITO, BARRIO, DIF_BARRIO)
+
+```
+En el caso de los 10 barrios con mayor descenso de precio, se observa como diferencia barrios pertenecientes a distritos con aumento de precio. Este es el caso del barrio de Natzaret en el distrito de Poblats Marítims o Cami Real en el distrito de Jesus. Esto da a entender que aunque haya distritos con aumento de precio, no quiere indicar que la tendencia de sus barrios haya sido de la misma manera.
+
+Con esto se da por finalizado este apartado del análisis de la tendencia del precio por metro cuadrado para los distintos barrios de la ciudad de Valencia. Posteriormente, se hará un caso de estudio donde se comparará el precio medio de la vivienda en la ciudad de Valencia y el salario medio en la Comunidad Valenciana para ver si la tasa de esfuerzo ha aumentado o disminuido en estos 12 años.
+
+https://www.especulador.es/inmobiliaria/pisos/espana/comunitat-valenciana
 
 
 

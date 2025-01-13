@@ -89,6 +89,16 @@ str(Salario)
 # pero en R las comas no son interpretadas con la intención del archivo
 ```
 
+En primer lugar, `Sexo` es una variable de tipo `string`que refleja si estamos teniendo en cuenta a los hombres, las mujeres o a ambos.
+
+A continuación tenemos la variable `Comunidades autónomas` que es de tipo `string` y que refleja los distintos nombres de las comunidades autónomas de nuestro país.
+
+Por otro lado, la variable `Medias y percentiles` es de tipo `string` y refleja el tanto por ciento de personas que tienen un salario inferior a este.
+
+Seguidamente, tenemos la variable `periodo` que es de tipo `numérico` y que nos indica el año que estamos tratando.
+
+Por último, tenemos la variable `Total` que es de tipo `string`y refleja el valor del salario en €.
+
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico. Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
 
 Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
@@ -386,7 +396,9 @@ g1
 
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
-## Mapa interactivo
+### Mapa interactivo
+
+Para terminar este primer análisis, y pese a que no es observable en este pdf, el Rmd incluye un mapa interactivo que muestra la evolución del salario medio en el territorio español.
 
 ```{r mapa salario, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 # Descargar el mapa de comunidades autónomas
@@ -453,34 +465,9 @@ g2
 ```
 Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
 
-### Análisis B
+## Análisis final
 
-```{r}
-# Filtrando los datos con dplyr para la Comunitat Valenciana
-segundo_análisis_B <- Salario %>%
-  filter(`Comunidades autónomas` == 'Comunitat Valenciana',
-         `Medidas y percentiles` == 'Media',
-         Sexo != 'Ambos sexos')
-
-# Creando la gráfica con ggplot2 para la Comunitat Valenciana
-g3 <- ggplot(segundo_análisis_B, aes(x = Periodo, y = Total, fill = Sexo)) +
-  geom_bar(stat = "identity", position = 'dodge') +
-  scale_fill_manual(values = coloresHM) +
-  geom_line(aes(group = Sexo, color = Sexo), linetype = "solid") +
-  geom_point(aes(color = Sexo)) +
-  labs(
-    title = 'Discrepancias de Género en el Salario Medio a Nivel valenciano',
-    y = 'Total (€)',
-    x = 'Periodo'
-  ) +
-  theme_minimal()
-
-# Mostrando la gráfica
-g3
-```
-En el caso de la Comunidad Valenciana observamos que la tendencia es muy similar a lo que ocurre a nivel nacional. Produciéndose un aumento significativo de los salarios tanto en el caso de las mujeres como en el de los hombres. Además, en el caso de la Comunidad Valenciana, la diferencia de salario entre los hombres y mujeres en el 2022 estaba por debajo de la media nacional.
-
-Análisis final referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
+referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
 
 ```{r}
 # Filtramos las comunidades autónomas excluyendo "Total Nacional" y seleccionamos solo la media y el sexo que no sea "Ambos sexos"
@@ -522,6 +509,8 @@ print(g4)
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dato es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
 
 ## App interactiva con Shiny del dataset Salario
+
+Finalmente, y pese a que no se muestree por las limitaciones del formato PDF, se incluye una página web creada con Shiny para poder observar el análisis de manera interactiva.
 
 ```{r app salario, echo=FALSE}
 # Crear la interfaz de usuario

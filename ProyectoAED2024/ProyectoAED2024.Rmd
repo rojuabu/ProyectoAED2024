@@ -62,6 +62,8 @@ particionCCAA <- c("Total Nacional", "Balears, Illes", "Canarias", "Cataluña", 
 
 En este proyecto, se analiza la evolución de los precios de la vivienda en España en comparación con los salarios medios, con un enfoque especial en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es explorar tendencias, identificar posibles disparidades y ofrecer un análisis detallado basado en datos. Este trabajo busca aplicar técnicas de análisis exploratorio de datos (EDA) para extraer información relevante que pueda ser de utilidad para futuros trabajos.
 
+# Acondicionamiento de los datos
+
 ```{r carga datasets, include=FALSE}
 # Especificamos que la columna total de Salario sea de tipo character para no perder las comas al importarlo como double
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
@@ -354,7 +356,11 @@ fotocasa_compra$AÑO_MAX <- ifelse(fotocasa_compra$M2_MAX == fotocasa_compra$M2_
 
 Con esto finalizamos el análisis de valores nulos e incongruencias en el conjunto de datos. Para el próximo apartado se procede al análisis de los datos (anomalías entre otras ocurrencia) y a la visualización de los mismos para continuar con la línea investigativa del trabajo.
 
-# Análisis preliminar del fichero Salario.
+# Análisis univariante
+
+## Análisis preliminar del fichero Salario.
+
+### Análisis de las variables categóricas
 
 Primeramente, con el propósito de analizar los outliers y las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en sí mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenía algún valor anómalo.
 
@@ -402,20 +408,11 @@ tabla_pdf <- tabla_combinada %>%
 
 # Mostrar la tabla
 tabla_pdf
-
-
-
 ```
-
-
-
-
 
 Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
 
-
-
-## Análisis de las variables numéricas
+### Análisis de las variables numéricas
 
 Estudiemos ahora la disposición de las variables numéricas.
 
@@ -493,13 +490,57 @@ El rango intercuartílico (IQR), que nos muestra la variabilidad en los salarios
 
 Como este análisis se realiza a lo largo de los años, el hecho de que el rango intercuartílico sea más elevado en los percentiles más altos indica que quienes más han aumentado su salario son los del percentil 90. Además, existen diferencias significativas entre lo que cobra la media de la población y el cuartil inferior, lo cual resalta una mayor desigualdad salarial entre la clase media.
 
-# Análisis preliminar del fichero Vivienda.
+## Análisis preliminar del fichero Vivienda.
 
 Los datos numéricos del dataset Vivienda corresponden al IPV. Este es un índice calculado por el INE que busca explicar el precio de la vivienda. Así, dado que este dato ya es en sí profundamente procesado, no creemos que realizar un análisis como el anterior sea ocurrente, pues no encontraríamos outliers o distribuciones interesantes.
 
-# Análisis del archivo Salario
+## Análisis preliminar del fichero Precio M2 Valencia
 
-## Evolución del sueldo medio
+### Análisis de valores
+
+```{r boxplot precio m2, echo=FALSE}
+# Boxplot para detectar outliers en cada variable numérica
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>%
+  gather(key = "Precio_m2", value = "Euros") %>%
+  ggplot(aes(x = Precio_m2, y = Euros, fill = Precio_m2))  +
+  geom_boxplot(alpha = 0.7) + 
+  labs(title = "Boxplot de precios por metro cuadrado") + 
+  theme_minimal()
+```
+
+Del resultado de la gráfica de caja  podemos observar que la tendencia evolutiva de los precios a sido a la alza. La media para el año de 2010 fue de 1677,193€/m2, mientras que para el año 2022 fue de 1959,330€/m2. El precio máximo histórico fue de 2022.193€/m2 en el año 2022, mientras que el precio mínimo fue de 1677.193€/m2 en el año 2010. Esto supone un incremento de 282.137€/m2 en 12 años. El diagrama también muestra que el primer cuartil es similar en ambos años, mientras que el tercer cuartil es mayor en el año 2022. Esto indica que la distribución de los precios de 2022 es más dispersa que la de 2010. Esto se nota aún más en los máximos y mínimos. Los valores de 2010 se centraban en el rango de los 1162€/m2 a los 2455€/m2, mientras que en 2022 se centran en el rango de los 1103€/m2 a los 4029€/m2. Sorprende la presencia de valores tan altos en 2022, duplicando el precio máximo de 2010 en casi un 60%. Por otro lado, los mínimos de ambos años son muy similares, lo que indica que los precios mínimos no han variado mucho en estos 12 años.   
+
+Como observación, en el año 2022 existe un dato anómalo que se aleja mucho del resto de los datos. Este valor anómalo es el precio de 4029€/m2. Este valor es un 60% mayor que el precio máximo de 2010.
+
+```{r barrio anómalo, include=FALSE}
+#Seleccionar fila con valor máximo del 2022
+fotocasa_compra %>% 
+  filter(M2_2022 == 4029) %>%
+  select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
+```
+
+Explorando el dataset, encontramos que estos datos pertenecen a El pla, del distrito de L'Eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
+
+```{r histograma m2, echo=FALSE}
+# Histograma de todas las variables numéricas 
+fotocasa_compra %>% 
+  select(where(is.numeric)) %>%
+  gather(key = "Variable", value = "Valor") %>%
+  ggplot(aes(x = Valor, fill = Variable)) +
+  geom_histogram(bins = 30, alpha = 0.7) +
+  facet_wrap(~ Variable, scales = "free") +
+  labs(title = "Distribución de Variables Numéricas") +
+  theme_minimal()
+```
+
+Viendo estos resultados, se presencia las mismas observaciones que nos deja el análisis del diagrama de caja. Los precios de 2010 siguen una distribución más uniforme en un rango más cerrado entre los 1162€/m2 y los 2455€/m2. Por otro lado, los precios de 2022 se dispersan más, con un rango de 1103€/m2 a 4029€/m2, reafirmando una vez más la evolución a la alza de los precios. No obstante, cabe mencionar la similitud entre los histogramas de máximos históricos y precios de 2022. Esto indica que los precios máximos de 2022 se han disparado y apuntalando a ser los máximos históricos alcanzados a la misma vez.
+
+# Análisis explicativo de los datos
+
+## Análisis del archivo Salario
+
+### Evolución del sueldo medio
 
 Primeramente, nos centraremos en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio(tomando como referencia 2022) y con menor valor de este. No obstante,en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
@@ -542,8 +583,6 @@ g1
 
 Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
-### Mapa interactivo
-
 Para terminar este primer análisis, y pese a que no es observable en este pdf, el Rmd incluye un mapa interactivo que muestra la evolución del salario medio en el territorio español.
 
 ```{r mapa salario, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -582,7 +621,7 @@ animate(
 )
 ```
 
-## Discrepancias de género a lo largo de los años
+### Discrepancias de género a lo largo de los años
 
 Aprovechando la variable `sexo` presente en el dataset, pasamos a estudiar las discrepancias de salario respecto al género a lo largo de los años.
 
@@ -655,7 +694,7 @@ print(g4)
 
 Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dato es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
 
-## App interactiva con Shiny del dataset Salario
+### App interactiva con Shiny del dataset Salario
 
 Finalmente, y pese a que no se muestree por las limitaciones del formato PDF, se incluye una página web creada con Shiny para poder observar el análisis de manera interactiva.
 
@@ -732,7 +771,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-# Análisis del dataset Vivienda.
+## Análisis del dataset Vivienda.
 
 En este dataset se analiza el IPV (Índice de Precios de Vivienda) dependiendo del año, región o tipo de vivienda. Para poder entender correctamente el siguiente análisis, tenemos que explicar brevemente en que consiste el IPV.
 
@@ -740,7 +779,7 @@ El IPV tiene como principal objetivo medir la evolución del nivel de los precio
 
 Una vez aclarado el concepto del IPV, pasamos al análisis de nuestro datatset.
 
-## Evolución del IPV a lo largo de los años por región.
+### Evolución del IPV a lo largo de los años por región.
 
 La principal información que recoge este dataset es el del valor del IPV a lo largo de los años. Así, empezaremos estudiando la evolución del IPV del $2007$ al $2022$. Además, aprovecharemos el hecho de que los datos están seccionados por autonomías, para comparar dicha evolución.
 
@@ -770,8 +809,6 @@ Como podemos ver, el IPV sufrió una gran caída a partir del año $2008$, posib
 Respecto a la comparativa por autonomías, vemos como Madrid, Cataluña y Canarias  obtienen los mayores valores del IPV actual, por encima del valor nacional. Por otro lado, Extremadura, Navarra y las castillas tienen el IPV más bajo de todas las comunidades autónomas.
 
 Esta diferencia de valores puede ser motivo de las preferencias del sector turístico, pues Madrid, Cataluña y Canarias son comunidades altamente turísticas, en contraste a las otras comunidades.
-
-### Mapa interactivo
 
 Si bien ya podíamos visualizar tendencias y sacar conclusiones en el anterior gráfico, el siguiente mapa (no disponible en pdf) ayudará a afinar dichas conclusiones.
 
@@ -810,7 +847,7 @@ animate(
 )
 ```
 
-## Viviendas nueva y de segunda mano
+### Viviendas nueva y de segunda mano
 
 El dataset también nos ofrece información sobre la diferencia entre el IPV de viviendas nuevas y de segunda mano. Veamos la distinta evolución a nivel nacional.
 
@@ -863,7 +900,7 @@ Vivienda3$Diferencia <- Vivienda3$`Vivienda nueva` - Vivienda3$`Vivienda segunda
     )
 ```
 
-## App interactiva con Shiny del dataset Vivienda
+### App interactiva con Shiny del dataset Vivienda
 
 Para finalizar nuestro análisis de los datos del IPV en España, creamos la siguiente aplicación que permite observar con mayor claridad, y de manera personalizada, los gráficos presentados. (No disponible en pdf)
 
@@ -938,52 +975,14 @@ server_vivienda <- function(input, output) {
 # Ejecutar la aplicación Shiny
 shinyApp(ui = ui_vivienda, server = server_vivienda)
 ```
-#Análisis preliminar del fichero Precio M2 Valencia
 
-## Análisis de valores
+## Análisis del archivo Precio M2 Valencia
 
-```{r boxplot precio m2, echo=FALSE}
-# Boxplot para detectar outliers en cada variable numérica
-fotocasa_compra %>% 
-  select(where(is.numeric)) %>%
-  gather(key = "Precio_m2", value = "Euros") %>%
-  ggplot(aes(x = Precio_m2, y = Euros, fill = Precio_m2))  +
-  geom_boxplot(alpha = 0.7) + 
-  labs(title = "Boxplot de precios por metro cuadrado") + 
-  theme_minimal()
-```
-
-Del resultado de la gráfica de caja  podemos observar que la tendencia evolutiva de los precios a sido a la alza. La media para el año de 2010 fue de 1677,193€/m2, mientras que para el año 2022 fue de 1959,330€/m2. El precio máximo histórico fue de 2022.193€/m2 en el año 2022, mientras que el precio mínimo fue de 1677.193€/m2 en el año 2010. Esto supone un incremento de 282.137€/m2 en 12 años. El diagrama también muestra que el primer cuartil es similar en ambos años, mientras que el tercer cuartil es mayor en el año 2022. Esto indica que la distribución de los precios de 2022 es más dispersa que la de 2010. Esto se nota aún más en los máximos y mínimos. Los valores de 2010 se centraban en el rango de los 1162€/m2 a los 2455€/m2, mientras que en 2022 se centran en el rango de los 1103€/m2 a los 4029€/m2. Sorprende la presencia de valores tan altos en 2022, duplicando el precio máximo de 2010 en casi un 60%. Por otro lado, los mínimos de ambos años son muy similares, lo que indica que los precios mínimos no han variado mucho en estos 12 años.   
-
-Como observación, en el año 2022 existe un dato anómalo que se aleja mucho del resto de los datos. Este valor anómalo es el precio de 4029€/m2. Este valor es un 60% mayor que el precio máximo de 2010.
-
-```{r barrio anómalo, include=FALSE}
-#Seleccionar fila con valor máximo del 2022
-fotocasa_compra %>% 
-  filter(M2_2022 == 4029) %>%
-  select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
-```
-Explorando el dataset, encontramos que estos datos pertenecen a El pla, del distrito de L'Eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
-
-```{r histograma m2, echo=FALSE}
-# Histograma de todas las variables numéricas 
-fotocasa_compra %>% 
-  select(where(is.numeric)) %>%
-  gather(key = "Variable", value = "Valor") %>%
-  ggplot(aes(x = Valor, fill = Variable)) +
-  geom_histogram(bins = 30, alpha = 0.7) +
-  facet_wrap(~ Variable, scales = "free") +
-  labs(title = "Distribución de Variables Numéricas") +
-  theme_minimal()
-```
-
-Viendo estos resultados, se presencia las mismas observaciones que nos deja el análisis del diagrama de caja. Los precios de 2010 siguen una distribución más uniforme en un rango más cerrado entre los 1162€/m2 y los 2455€/m2. Por otro lado, los precios de 2022 se dispersan más, con un rango de 1103€/m2 a 4029€/m2, reafirmando una vez más la evolución a la alza de los precios. No obstante, cabe mencionar la similitud entre los histogramas de máximos históricos y precios de 2022. Esto indica que los precios máximos de 2022 se han disparado y apuntalando a ser los máximos históricos alcanzados a la misma vez.
-
-## Análisis por distritos 
+### Análisis por distritos 
 
 Uno de los aspectos más relevantes comparativamente es agrupar los precios por distrito y ver cómo ha evolucionado el precio por metro cuadrado en cada uno de ellos. Se realiza gráfico de barras para ver la evolución de los precios en los años 2010 y 2022.
 
-```{r}
+```{r evolucion precio medio, echo=FALSE}
 # Gráfico de barras de la media de precios por metro cuadrado en los años 2010 y 2022 por distrito
 fotocasa_compra %>% 
   group_by(DISTRITO) %>% 
@@ -997,7 +996,7 @@ fotocasa_compra %>%
 
 ```
 
-```{r}
+```{r superaciones, include=FALSE}
 #Contar número de medias que han sido superadas en 2022
 fotocasa_compra %>% 
   group_by(DISTRITO) %>% 
@@ -1007,7 +1006,7 @@ fotocasa_compra %>%
 ```
 Aunque la tendencia del precio ha sido de aumentar, al cotejar los distintos distritos observamos que en la mayoría de los casos no han sido así. En un total de 15 distritos de los 19, el precio medio por metro cuadrado en 2022 ha superado al de 2010. 
 
-```{r}
+```{r diferencia por distritos, echo=FALSE}
 #Gráfica de barras del porcentaje de aumento o disminución de la media de precio por metro cuadrado entre 2010 y 2022 para cada distrito, con el valor en cada barra y colores rojo para aumento y verde para disminucion
 fotocasa_compra %>% 
   group_by(DISTRITO) %>% 
@@ -1029,11 +1028,11 @@ fotocasa_compra %>%
 
 Los distritos que han experimentado un mayor aumento de precio son los distritos de Quatre Carreres (63,1%), L'Eixample (58,3%) y Poblats Marítims (39,1%). Por otro lado, los distritos de Benimaclet (3,2%), Campanar (10,7%) y Benicalap (20,5%) han experimentado un descenso en el precio medio por metro cuadrado en 2022 respecto a 2010. Esto indica una vez más que la evolución de los precios no ha sido uniforme en la ciudad de Valencia. Se puede justificar estas diferencias a la localización de los distritos, la presencia de servicios, la calidad de vida, la gentrificación o la presencia de turismo. Por ejemplo, los tres primeros distritos pertenecen a la zona centro de la ciudad (L'Eixample), tienen barrios cercanos al centro (Quatre Carrerer) o están cerca del paseo marítimo (Poblats Marítims). Por otro lado, los tres últimos distritos pertenecen a la periferia de la ciudad y son distritos más residenciales, más lejos de los servicios y de la zona turística; como es el caso de Benicalap o Benimaclet. Aun así resalta el descenso de precios en Campanar, una zona bien comunicada y con buenos servicios, en los que destacar los barrios de Campanar propiamente o El Calvari. 
 
-## Análisis por barrios 
+### Análisis por barrios 
 
 Como hincapié a este análisis, se hace un enfoque en el cambio de precios para cada barrio y comprobar si la tendencia es la misma que en los distritos a los que pertenece. Para ello vamos a observar los casos de los 10 primeros barrios con mayor aumento y los 10 primeros con mayor descenso de precio por metro cuadrado.
 
-```{r}
+```{r diferencia por barrios, echo=FALSE}
 fotocasa_compra_high <- fotocasa_compra %>%
   mutate(DIF_BARRIO = ((M2_2022 - M2_2010) / M2_2010) * 100) %>%
   arrange(desc(DIF_BARRIO)) %>%  # Ordenar de mayor a menor porcentaje
@@ -1062,14 +1061,12 @@ ggplot(fotocasa_compra_high, aes(x = reorder(BARRIO, DIF_BARRIO), y = DIF_BARRIO
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-
 Vemos que para los 10 barrios con mayor aumento todos pertenecen a distritos cuya diferencia de precios fue de un aumento, como es el caso de Quatre Carreres, L'Eixample o Extramurs. Se destaca el barrio de Ciutat de les Arts i les Ciències con un aumento de del 126,24%, muy por encima incluso del segundo barrio (El Pla del Real) con un aumento del 91,31%, casi una diferencia de 35 puntos porcentuales. 
 
 En el caso de los 10 barrios con mayor descenso de precio, se observa como diferencia barrios pertenecientes a distritos con aumento de precio. Este es el caso del barrio de Natzaret en el distrito de Poblats Marítims, Cami Real en el distrito de Jesus. Esto da a entender que aunque haya distritos con aumento de precio, no quiere indicar que la tendencia de sus barrios haya sido de la misma manera.
 
 Con esto se da por finalizado este apartado del análisis de la tendencia del precio por metro cuadrado para los distintos barrios de la ciudad de Valencia.
 
-
-# Conclusion
+# Conclusión
 
 El análisis realizado nos permite comprender mejor las dinámicas entre el precio de la vivienda y los salarios en España. Se observaron patrones relevantes que reflejan desafíos en términos de accesibilidad y sostenibilidad económica para la población. Este estudio resalta la importancia de contar con políticas efectivas que aborden estas disparidades y fomenta la reflexión sobre cómo las tendencias actuales pueden afectar el bienestar socioeconómico en el futuro.

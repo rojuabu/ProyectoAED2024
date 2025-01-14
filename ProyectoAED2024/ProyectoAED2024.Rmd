@@ -70,6 +70,8 @@ En este proyecto se pretende trabajar con distintos datasets de vivienda y salar
 Salario <- read_delim("../data/Salario.csv", delim = ";", escape_double = FALSE, col_types = cols(Total = col_character()), trim_ws = TRUE)
 # Con vivienda no es necesario porque como se ve en la herramienta la columna se importa como character
 Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+# Leer el dataset de fotocasa
+fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header = TRUE, sep = ";")
 ```
 
 ## Carga y ajuste del dataset: Salario
@@ -796,37 +798,28 @@ shinyApp(ui = ui_vivienda, server = server_vivienda)
 # Análisis de precio por metro cuadrado en compra de pisos en la ciudad de Valencia por la plataforma Fotocasa
 
 En este último apartado del trabajo, se procede a examinar la evolución del precio de metro cuadrado en la compra de pisos en la ciudad de Valencia en los años de 2010 y 2022 y comparar posteriormente cuanto supone la inversión respecto al salario medio de la comunidad Valenciana.
-
-```{r}
-# Leer el dataset
-fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header = TRUE, sep = ";")
-#Primeras filas
-head(fotocasa_compra)
-```
  
 El conjunto de datos de la plataforma Fotocasa responde al precio del metro cuadrado compra de viviendas en la ciudad de Valencia. Se presentan datos de precio en los años de 2010 y 2022, con información sobre el distrito, barrio, precio de metro cuadrado y máximos históricos. Las columnas Geo.Point y Geo.Shape contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
 
 El primer paso consiste en renombrar las columnas a nombres más sencillos y fáciles de trabajar, asi como eliminar la columna de fecha, que no aporta información relevante para el análisis.
  
-```{r}
+```{r renombrar fotocasa, echo=FALSE}
 #Drop de columna FECHA
 fotocasa_compra$Fecha_creacion <- NULL
 
 #Renombrar columnas
 colnames(fotocasa_compra) <- c("GEO_P","GEO_S", "CODDISTBAR", "CODBAR", "CODDIS", "DISTRITO", "M2_2022", "M2_2010", "M2_MAX", "AÑO_MAX", "BARRIO")
-fotocasa_compra
 ```
 
-
-```{r}
+```{r str de fotocasa, include=FALSE}
 #Resumen de la estructura del dataset
 str(fotocasa_compra)
 ```
 
-A la vista de la estructura del dataset, se observa que la mayoría de las variables son de tipo numérico, excepto aquellas de coordenadas geográficas que son de tipo character, así como el distrito, el barrio o el año (siendo estas tres últimas convertibles a caracter o factor) y las referentes a coordendas geográficas.
+Usando el comando `str`, se observa que la mayoría de las variables son de tipo numérico, excepto aquellas de coordenadas geográficas que son de tipo character, así como el distrito, el barrio o el año (siendo estas tres últimas convertibles a caracter o factor) y las referentes a coordendas geográficas.
  
-```{r}
-#Trasformar tipo de CODISTBAR , CODDIS y CODBAR a caracter
+```{r transformacion a caracter, include=FALSE}
+#Trasformar tipo de CODISTBAR, CODDIS y CODBAR a caracter
 fotocasa_compra$CODDISTBAR <- as.character(fotocasa_compra$CODDISTBAR)
 fotocasa_compra$CODDIS <- as.character(fotocasa_compra$CODDIS)
 fotocasa_compra$CODBAR <- as.character(fotocasa_compra$CODBAR)

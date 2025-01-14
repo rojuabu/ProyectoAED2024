@@ -125,14 +125,11 @@ Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 
 ### Datos faltantes
 
-Busquemos en el fichero de Salario la presencia de algún dato faltante.
-
-```{r datos faltantes en salario, echo=FALSE}
+```{r datos faltantes en salario, include=FALSE}
 # Por último comprobamos que no tenemos ningún dato perdido
 vis_miss(Salario)
 ```
-
-Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
+Utilizando la función `vis_miss`, descubrimos que, afortunadamente, no existen datos faltantes.
  
 ### Fin de la preparación del dataset
 
@@ -191,12 +188,12 @@ Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Au
 
 A continuación, estudiamos la posible existencia de datos faltantes en nuestro dataset.
 
-```{r datos faltantes en vivienda, echo=FALSE}
+```{r datos faltantes en vivienda, include=FALSE}
 # Por último comprobamos si tenemos algún dato perdido
 vis_miss(Vivienda)
 ```
 
-Como podemos observar, el dataset Vivienda sí tiene algunos datos faltantes en la variable "Total". Utilizando de nuevo el comando `str`, vemos que nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla.
+Al usar la función `viss_miss`, encontramos algunos datos faltantes en la variable "Total". Utilizando de nuevo el comando `str`, vemos que nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla.
 
 ```{r encontrar datos faltantes en vivienda, include=FALSE}
 # Buscamos dónde están dichos datos faltantes
@@ -218,11 +215,6 @@ save(Vivienda,file = '../data/Vivienda_clean.csv')
 ## Carga y ajuste del dataset: Precio M2 Valencia
 
 En este último apartado de proceso de carga y ajuste de conjunto de datos, se procede a examinar el conjunto de precios del metro cuadrado por barrio en la ciudad de Valencia en los años 2010 y 2022.
-
-```{r lectura dataset Valencia, echo=FALSE}
-#Leer el dataset
-fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header = TRUE, sep = ";")
-```
  
 El conjunto de la plataforma Fotocasa responde al precio del metro cuadrado para la compra de viviendas en la ciudad de Valencia. Se presentan datos de precio en los años de 2010 (`Precio_2010 (Euros/m2)`) y 2022(`Precio_2022 (Euros/m2)`), con información sobre el distrito (`DISTRITO`), barrio(`BARRIO`), precio de metro cuadrado (`Max_historico (Euros/m2)`) y máximos históricos (`Año_Max_Hist`). Las columnas Geo.Point (`Geo.Point`) y Geo.Shape (`Geo.Shape`) contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito (`coddistrit`) diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio (`codbarrio`) numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio (`coddistbar`) identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
 
@@ -258,7 +250,7 @@ De las variables restantes sin comentar son de tipo numérico, enfocando que aqu
 
 ### Duplicados y valores faltantes
 
-```{r filas duplicadas o faltantes, echo=FALSE}
+```{r filas duplicadas o faltantes, include=FALSE}
 #Comprobar si hay filas duplicadas
 duplicados <- fotocasa_compra[duplicated(fotocasa_compra),]
 # Exploración de datos faltantes
@@ -963,15 +955,15 @@ fotocasa_compra %>%
 
 Del resultado de la gráfica de caja  podemos observar que la tendencia evolutiva de los precios a sido a la alza. La media para el año de 2010 fue de 1677,193€/m2, mientras que para el año 2022 fue de 1959,330€/m2. El precio máximo histórico fue de 2022.193€/m2 en el año 2022, mientras que el precio mínimo fue de 1677.193€/m2 en el año 2010. Esto supone un incremento de 282.137€/m2 en 12 años. El diagrama también muestra que el primer cuartil es similar en ambos años, mientras que el tercer cuartil es mayor en el año 2022. Esto indica que la distribución de los precios de 2022 es más dispersa que la de 2010. Esto se nota aún más en los máximos y mínimos. Los valores de 2010 se centraban en el rango de los 1162€/m2 a los 2455€/m2, mientras que en 2022 se centran en el rango de los 1103€/m2 a los 4029€/m2. Sorprende la presencia de valores tan altos en 2022, duplicando el precio máximo de 2010 en casi un 60%. Por otro lado, los mínimos de ambos años son muy similares, lo que indica que los precios mínimos no han variado mucho en estos 12 años.   
 
-Como observación, en el año 2022 existe un dato anómalo que se aleja mucho del resto de los datos. Este valor anómalo es el precio de 4029€/m2. Este valor es un 60% mayor que el precio máximo de 2010. Se comprueba qué barrio es y a que distrito pertenece.
+Como observación, en el año 2022 existe un dato anómalo que se aleja mucho del resto de los datos. Este valor anómalo es el precio de 4029€/m2. Este valor es un 60% mayor que el precio máximo de 2010.
 
-```{r barrio anómalo, echo=FALSE}
+```{r barrio anómalo, include=FALSE}
 #Seleccionar fila con valor máximo del 2022
 fotocasa_compra %>% 
   filter(M2_2022 == 4029) %>%
   select(DISTRITO, BARRIO, M2_2010, M2_2022, M2_MAX, AÑO_MAX)
 ```
-El barrio resultantes es El pla del, del distrito de L'Eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
+Explorando el dataset, encontramos que estos datos pertenecen a El pla, del distrito de L'Eixample. En su comparación con el precio en 2022, se comprueba que ha duplicado prácticamente el precio máximo de 2010. Al hecho de que se trata de un distrito céntrico y turístico, en pleno casco histórico de la ciudad de Valencia, el valor sigue siendo extraño. Si se compara con otros barrios del distrito donde la evolución ha sido más estable (por ejemplo Russafa de 2106€/m2 a 2738€/m2 o La Gran Via de 2106€/m2 a 3237€/m2). Se puede argumentar al aumento con los años del turismo y el auge de las casas de alquiler vacacional, la gentrificación o el aumento de los nómadas digitales. 
 
 ```{r histograma m2, echo=FALSE}
 # Histograma de todas las variables numéricas 
@@ -986,8 +978,6 @@ fotocasa_compra %>%
 ```
 
 Viendo estos resultados, se presencia las mismas observaciones que nos deja el análisis del diagrama de caja. Los precios de 2010 siguen una distribución más uniforme en un rango más cerrado entre los 1162€/m2 y los 2455€/m2. Por otro lado, los precios de 2022 se dispersan más, con un rango de 1103€/m2 a 4029€/m2, reafirmando una vez más la evolución a la alza de los precios. No obstante, cabe mencionar la similitud entre los histogramas de máximos históricos y precios de 2022. Esto indica que los precios máximos de 2022 se han disparado y apuntalando a ser los máximos históricos alcanzados a la misma vez.
-
-
 
 ## Análisis por distritos 
 
@@ -1070,7 +1060,6 @@ ggplot(fotocasa_compra_high, aes(x = reorder(BARRIO, DIF_BARRIO), y = DIF_BARRIO
   scale_fill_manual(values = c("red", "green"), labels = c("Aumento", "Disminución")) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 ```
 
 

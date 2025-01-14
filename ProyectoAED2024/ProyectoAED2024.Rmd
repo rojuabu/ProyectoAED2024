@@ -1,27 +1,15 @@
 ---
-title: Evolución y comparativa del precio de la vivienda y el salario medio
+title: "Evolución y comparativa del precio de la vivienda y el salario medio"
 author:
-  - name: Rodrigo Juanes Busolo
-  - name: Noé López García
-  - name: Marc Velasco Mateu
-# document options
-type: article
-# front matter
-simplesummary: |
-  Con tal de poner a prueba nuestros conocimientos de análisis exploratorio de datos, analizaremos detenidamente datasets sobre el valor de la vivienda española, el salario medio en España y el precio por metro cuadrado en la ciudad de Valencia.
-abstract: |
-  Aquí ponemos el abstract.
-# back matter
-acknowledgement: |
-  Gracias a Marcelino Martinez Sober y a Juan Gomez Sanchis.
-abbreviations:
-  - short: CCAA
-    long: Comunidades autónomas
-bibliography: mybibfile.bib
-endnotes: false
-output: 
-  rticles::mdpi_article:
-    extra_dependencies: longtable
+- name: Rodrigo Juanes Busolo
+- name: Noé Lopez García
+- name: Marc Velasco Mateu
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+runtime: shiny
 ---
 
 ```{r limpieza, include=FALSE}
@@ -38,9 +26,6 @@ library(patchwork)
 library(plotly)
 library(lubridate)
 library(corrplot)
-#library(skimr)
-#library(maps)
-#library(mapdata)
 library(tidyverse)
 library(forcats)
 library(visdat)
@@ -57,13 +42,21 @@ library(shiny)
 
 ```{r colores, include=FALSE}
 #Colores para comunidades autónomas
-coloresCCAA <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00",  "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+coloresCCAA <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#FFFF33", "#A65628", "#984EA3", "#999999", "#FFC0CB", "#00FF00", "#FF00FF", "#0000FF", "#FFD700", "#000000", "#666666",  "#00FFFF", "#FF4500", "#581845", "#123705", "#9588dd")
+
+#Colores para la partición
+coloresparticiónCCAA <- c("#E41A1C", "#FFFF33", "#A65628", "#00FF00", "#FF00FF", "#000000")
 
 #Colores para sexo
 coloresHM <- c( "#377EB8","#FFC0CB")
 
 #Colores para tipos de vivienda
 coloresNS <- c( "#ffdb4d","#4DAF4A")
+```
+
+```{r ccaa, include=FALSE}
+#Partición de comunidades autónomas
+particionCCAA <- c("Total Nacional", "Balears, Illes", "Canarias", "Cataluña", "Comunitat Valenciana", "Madrid, Comunidad de")
 ```
 
 # Introducción
@@ -81,15 +74,21 @@ Vivienda <- read_delim("../data/Vivienda.csv", delim = ";", escape_double = FALS
 
 ## Carga y ajuste del dataset: Salario
 
-Inicialmente ejecutamos el comando str para obervar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
+Estudiemos el contenido del dateset Salario, formado por 4860 registros de 5 variables.
 
-```{r str salario, echo=FALSE}
+### Variables en el dataset
+
+Inicialmente ejecutamos el comando str para observar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
+
+```{r str salario, include=FALSE}
 str(Salario)
 # Como se puede ver el problema de la variable Total es que tiene comas y puntos,
 # pero en R las comas no son interpretadas con la intención del archivo
 ```
 
-En primer lugar, `Sexo` es una variable de tipo `string`que refleja si estamos teniendo en cuenta a los hombres, las mujeres o a ambos.
+A continuación, describimos todas las variables presentes.
+
+En primer lugar, `Sexo` es una variable de tipo `string` que refleja si estamos teniendo en cuenta a los hombres, las mujeres o a ambos.
 
 A continuación tenemos la variable `Comunidades autónomas` que es de tipo `string` y que refleja los distintos nombres de las comunidades autónomas de nuestro país.
 
@@ -102,8 +101,6 @@ Por último, tenemos la variable `Total` que es de tipo `string`y refleja el val
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico. Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
 
 Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
-
-Por último, ajustaremos la columna de comunidades autónomas, pues los nombres de algunas comunidades aparecen fuera de orden.
 
 ```{r ajuste preliminar de salario, echo=FALSE}
 # Pasamos a cambiar el formato, y una vez con este correcto hacer un casteo a numérico
@@ -127,12 +124,18 @@ inter2<-as.factor(Salario$Sexo)
 Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 ```
 
-Además, con el objetivo de ver si existe algún dato faltante se buscó en el fichero de Salario la presencia de algún dato faltante. Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
+### Datos faltantes
+
+Busquemos en el fichero de Salario la presencia de algún dato faltante.
 
 ```{r datos faltantes en salario, echo=FALSE}
 # Por último comprobamos que no tenemos ningún dato perdido
 vis_miss(Salario)
 ```
+
+Afortunadamente, en el caso de este fichero no se encontraron datos faltantes, por lo que en este caso no fue necesario emplean ningún método para solucionar esto.
+ 
+### Fin de la preparación del dataset
 
 Finalmente guardamos el nuevo fichero con los cambios.
 
@@ -148,9 +151,11 @@ A continuación, estudiaremos el contenido del dataset Vivienda formado por 1920
 
 Empecemos estudiando las variables presentes en el dataset. Ejecutamos el comando str para ver los tipos de datos existentes, y si estos son coherentes con la información que almacenan.
 
-```{r str vivienda, echo=FALSE}
+```{r str vivienda, include=FALSE}
 str(Vivienda)
 ```
+
+Describimos a continuación las variables del dataset.
 
 En primer lugar, tenemos la variable `Comunidades y Ciudades Autónomas`, donde se almacenan los distintos nombres de las comunidades y ciudades autónomas españolas. Esta variable es de tipo `string`, lo cual es adecuado.
 
@@ -180,14 +185,7 @@ Vivienda$`Índices y tasas` <- factor(Vivienda$`Índices y tasas`,
 
 #Ajustamos los nombres de las comunidades y ciudades
 Vivienda$`Comunidades y Ciudades Autónomas` <- substr(Vivienda$`Comunidades y Ciudades Autónomas`, 4, nchar(Vivienda$`Comunidades y Ciudades Autónomas`))
-
 Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "ional"] <- "Total Nacional"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Asturias, Principado de"] <- "Principado de Asturias"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Balears, Illes"] <- "Illes Balears"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Madrid, Comunidad de"] <- "Comunidad de Madrid"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Murcia, Región de"] <- "Región de Murcia"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Navarra, Comunidad Foral de"] <- "Comunidad Foral de Navarra"
-#Vivienda$`Comunidades y Ciudades Autónomas`[Vivienda$`Comunidades y Ciudades Autónomas` == "Rioja, La"] <- "La Rioja"
 ```
 
 ### Datos faltantes
@@ -199,14 +197,14 @@ A continuación, estudiamos la posible existencia de datos faltantes en nuestro 
 vis_miss(Vivienda)
 ```
 
-Como podemos observar, el dataset Vivienda sí tiene algunos datos faltantes en la variable "Total". Estudiamos donde se encuentran estos datos faltantes.
+Como podemos observar, el dataset Vivienda sí tiene algunos datos faltantes en la variable "Total". Utilizando de nuevo el comando `str`, vemos que nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla.
 
-```{r encontrar datos faltantes en vivienda, echo=FALSE}
+```{r encontrar datos faltantes en vivienda, include=FALSE}
 # Buscamos dónde están dichos datos faltantes
 str(Vivienda[is.na(Vivienda$Total),])
 ```
 
-Al parecer, nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla. Podemos lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de inputar valores nuevos.
+Podemos lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de imputar valores nuevos.
 
 En nuestro caso, dado que los datos son proporcionados por la INE, y posiblemente sean calculados a partir de una enorme cantidad y factores que no están a nuestra disposición, optaremos por dejar los datos tal y como están, aunque esto nos prive de analizar los distintos tipos de vivienda en las ciudades autónomas.
 
@@ -222,7 +220,7 @@ save(Vivienda,file = '../data/Vivienda_clean.csv')
 
 Primeramente, con el propósito de analizar los outliers y las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 
-```{r}
+```{r tabla salario, echo=FALSE}
 # Calcular frecuencias por separado y unirlas en una tabla
 tabla_combinada <- bind_rows(
   Salario %>%
@@ -273,14 +271,16 @@ Como vemos no existe ninguna anomalía en las variables categóricas, dado que t
 
 ## Análisis de las variables numéricas
 
-```{r}
+Estudiemos ahora la disposición de las variables numéricas.
+
+```{r boxplot univariante salario, echo=FALSE}
 ggplot(Salario, aes(x =`Medidas y percentiles`, y = Total,fill =`Medidas y percentiles`)) +
   geom_boxplot()+theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(title = 'Boxplot del salario según percentil')
 ```
 
 Como podemos ver, en casi todos los boxplots aparecen valores atípicos o outliers. Sin embargo, considerando que estamos analizando la evolución de los salarios a lo largo de más de 10 años, estos valores atípicos pueden ser el resultado natural del crecimiento de los salarios durante ese periodo. Además, no observamos valores extremadamente altos o bajos, lo que sugiere que no hay anomalías significativas en los datos, sino simplemente la variabilidad normal de un proceso económico que evoluciona con el tiempo.
 
-```{r}
+```{r distribucion salario, echo=FALSE, message=FALSE, warning=FALSE}
 # Crear gráficos de barras con densidad superpuesta
 library(patchwork)  # Para combinar múltiples gráficos
 percentiles_levels<-levels(Salario$`Medidas y percentiles`)
@@ -306,7 +306,7 @@ grafico_final
 
 Como podemos observar, las distribuciones no parecen ajustarse a una forma gaussiana en ninguno de los casos. Por eso, para definir la distribución, vamos a usar la mediana y el rango intercuartílico, ya que estas métricas no dependen del tipo de distribución que tengan los datos y son más fiables para describir distribuciones asimétricas o con valores atípicos
 
-```{r}
+```{r resumen metricas salario, echo=FALSE}
 # Crear tabla con gt para representar cada percentil con la mediana e IQR
 metricas_percentiles <- Salario %>%
   group_by(`Medidas y percentiles`) %>%
@@ -353,11 +353,11 @@ Los datos numéricos del dataset Vivienda corresponden al IPV. Este es un índic
 
 # Análisis del archivo Salario
 
-## Primer análisis
+## Evolución del sueldo medio
 
 Primeramente, nos centraremos en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio(tomando como referencia 2022) y con menor valor de este. No obstante,en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
-```{r}
+```{r evolucion sueldo medio, echo=FALSE}
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
 
 # Filtrando las comunidades autónomas con el valor de salario medio de 2022
@@ -436,11 +436,11 @@ animate(
 )
 ```
 
-## Segundo análisis 
+## Discrepancias de género a lo largo de los años
 
-Referido a las discrepancias de género en el salario medio a nivel nacional primero y luego a nivel valencia a lo largo del tiempo.
+Aprovechando la variable `sexo` presente en el dataset, pasamos a estudiar las discrepancias de salario respecto al género a lo largo de los años.
 
-```{r}
+```{r evolucion genero salario, echo=FALSE}
 # Filtrando los datos con dplyr
 segundo_análisis_A <- Salario %>%
   filter(`Comunidades autónomas` == 'Total Nacional',
@@ -463,13 +463,14 @@ g2 <- ggplot(segundo_análisis_A, aes(x = Periodo, y = Total, fill = Sexo)) +
 # Mostrando la gráfica
 g2
 ```
+
 Como se puede observar, desde el 2008 hasta el 2022 tanto el salario medio de las mujeres como el de los hombres ha experimentado un aumento sustancial. Pasando, aporximadamente de los 24000€ a los 29000€ en el caso de los hombres y de los  18000€ a los 24000€ en las mujeres. Sin embargo, y pese a que la diferencia ha diminuído con respecto a los hombres, las mujeres cobran de media aproximadamente lo mismo en el 2022 que los hombres en el 2008, dato que llama la atención y cuyas causas deberían ser estudiadas más en profundidad.
 
-## Análisis final
+### Discrepancias de género por comunidad
 
-referido a las discrepancias de génereo a lo largo de los años en las distintas comunidades autónomas
+A continuación, calculamos la brecha salarial media en cada comunidad autónoma y observamos su evolución en unas pocas.
 
-```{r}
+```{r brecha salarial por ccaa, echo=FALSE}
 # Filtramos las comunidades autónomas excluyendo "Total Nacional" y seleccionamos solo la media y el sexo que no sea "Ambos sexos"
 df_filtered <- Salario %>%
   filter(`Comunidades autónomas` != 'Total Nacional', 
@@ -512,7 +513,7 @@ Como vemos, las comunidades con la menor diferencia de salario medio entre hombr
 
 Finalmente, y pese a que no se muestree por las limitaciones del formato PDF, se incluye una página web creada con Shiny para poder observar el análisis de manera interactiva.
 
-```{r app salario, echo=FALSE}
+```{r app salario, eval=FALSE, include=FALSE}
 # Crear la interfaz de usuario
 ui <- fluidPage(
   titlePanel("Evolución del Sueldo Medio por CC. AA"),
@@ -600,26 +601,35 @@ La principal información que recoge este dataset es el del valor del IPV a lo l
 ```{r vivienda comunidades, echo=FALSE}
 #Escogemos los datos necesarios
 Vivienda1 <- Vivienda %>%
-  filter(`General, vivienda nueva y de segunda mano`=='General', 
+  filter(`Comunidades y Ciudades Autónomas` %in% particionCCAA,
+         `General, vivienda nueva y de segunda mano`=='General', 
          `Índices y tasas`=='Media anual')
 
 #Creamos el gráfico
-ggplotly(ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
+ggplot(Vivienda1, aes(x = Periodo, y = Total, color = `Comunidades y Ciudades Autónomas`)) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = coloresCCAA) +
+  scale_color_manual(values = coloresparticiónCCAA) +
   labs(
     title = 'Evolución del IPV por Comunidades Autónomas',
     y = 'IPV',
     x = 'Año',
     color = NULL  # Sin título en la leyenda
   ) +
-  guides(color = guide_legend(title = NULL)))  # Sin título en la leyenda
+  guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
 ```
 
-Si bien ya podemos visualizar tendencias y sacar conclusiones en este gráfico, el siguiente mapa ayudara a afinar dichas conclusiones.
+Como podemos ver, el IPV sufrió una gran caída a partir del año $2008$, posiblemente por el estallido de la burbuja inmobiliaria. Dicha caída continua hasta frenarse en el año $2015$, donde sigue una subida constante hasta la actualidad.
 
-```{r mapa vivienda, echo=FALSE,eval=FALSE}
+Respecto a la comparativa por autonomías, vemos como Madrid, Cataluña y Canarias  obtienen los mayores valores del IPV actual, por encima del valor nacional. Por otro lado, Extremadura, Navarra y las castillas tienen el IPV más bajo de todas las comunidades autónomas.
+
+Esta diferencia de valores puede ser motivo de las preferencias del sector turístico, pues Madrid, Cataluña y Canarias son comunidades altamente turísticas, en contraste a las otras comunidades.
+
+### Mapa interactivo
+
+Si bien ya podíamos visualizar tendencias y sacar conclusiones en el anterior gráfico, el siguiente mapa (no disponible en pdf) ayudará a afinar dichas conclusiones.
+
+```{r mapa vivienda, echo=FALSE, eval=FALSE}
 #Eliminamos el total nacional
 ViviendaMapa <- Vivienda %>%
   filter(`General, vivienda nueva y de segunda mano`=='General', 
@@ -654,15 +664,9 @@ animate(
 )
 ```
 
-Como podemos ver, el IPV sufrió una gran caída a partir del año $2008$, posiblemente por el estallido de la burbuja inmobiliaria. Dicha caída continua hasta frenarse en el año $2015$, donde sigue una subida constante hasta la actualidad.
-
-Respecto a la comparativa por autonomías, vemos como Madrid, Cataluña y Canarias  obtienen los mayores valores del IPV actual, por encima del valor nacional. Por otro lado, Extremadura, Navarra y las castillas tienen el IPV más bajo de todas las comunidades autónomas.
-
-Esta diferencia de valores puede ser motivo de las preferencias del sector turístico, pues Madrid, Cataluña y Canarias son comunidades altamente turísticas, en contraste a las otras comunidades.
-
 ## Viviendas nueva y de segunda mano
 
-El dataset también nos ofrece información sobre la diferencia entre el IPV de viviendas nuevas y de segunda mano.
+El dataset también nos ofrece información sobre la diferencia entre el IPV de viviendas nuevas y de segunda mano. Veamos la distinta evolución a nivel nacional.
 
 ```{r tipos de vivienda, echo=FALSE}
 #Escogemos los datos necesarios
@@ -672,7 +676,6 @@ Vivienda2 <- Vivienda %>%
          `General, vivienda nueva y de segunda mano`!='General')
 
 #Crear el gráfico
-ggplotly(
   ggplot(Vivienda2,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
     geom_bar(stat = "identity",position = 'dodge') +
     scale_fill_manual(values = coloresNS) +
@@ -684,67 +687,41 @@ ggplotly(
     x = 'Año',
     fill = "Tipo de vivienda"
     )
-  )
 ```
 
 Como podemos observar, $2015$ vuelve a ser un punto de inflexión, pues en este caso pasamos de ver un IPV mayor en las viviendas de segunda mano, a un mayor IPV en las nuevas viviendas.
 
-Nos centramos ahora en la Comunidad Valenciana, donde observamos la siguiente evolución.
-
-```{r tipos de vivienda valencia, echo=FALSE}
-#Escogemos los datos necesarios
-Vivienda3 <- Vivienda %>%
-  filter(`Comunidades y Ciudades Autónomas` == 'Comunitat Valenciana',
-         `Índices y tasas`=='Media anual',
-         `General, vivienda nueva y de segunda mano`!='General')
-
-#Creamos el gráfico
-ggplotly(
-  ggplot(Vivienda3,aes(x = Periodo, y = Total, fill = `General, vivienda nueva y de segunda mano`)) +
-    geom_bar(stat = "identity",position = 'dodge') +
-    scale_fill_manual(values = coloresNS) +
-    geom_line() +
-    geom_point() +
-    labs(
-    title = 'Evolución del IPV por tipo de vivienda en la Comunidad Valenciana',
-    y = 'IPV',
-    x = 'Año',
-    fill = "Tipo de vivienda"
-    )
-  )
-```
-
-Como vemos, la Comunidad Valenciana sigue la misma tendencia que el resto de España, aunque en este caso la diferencia entre el IPV de viviendas nuevas y de segunda mano es considerablemente mayor.
+### IPV de vivienda nueva y de segunda mano por comunidades autónomas
 
 Para terminar con este análisis, representaremos la diferencia entre el IPV de nuevas viviendas y viejas viviendas en toda España, contrastando nuestra conclusión previa.
 
 ```{r diferencia SN, echo=FALSE}
 # Filtrar los datos para el análisis de vivienda nueva y de segunda manp
-ViviendaDiff <- Vivienda[Vivienda$`Comunidades y Ciudades Autónomas` != 'Total Nacional' &
-                         Vivienda$`Índices y tasas` == 'Media anual' &
-                         Vivienda$`General, vivienda nueva y de segunda mano` != 'General',]
+Vivienda3 <- Vivienda %>%
+  filter(`Comunidades y Ciudades Autónomas` %in% particionCCAA,
+         `Índices y tasas`=='Media anual',
+         `General, vivienda nueva y de segunda mano`!='General')
+
 # Emplear pivot_wider para transformar los datos
-ViviendaDiff <- pivot_wider(ViviendaDiff, names_from = `General, vivienda nueva y de segunda mano`, values_from = Total)
-ViviendaDiff$Diferencia <- ViviendaDiff$`Vivienda nueva` - ViviendaDiff$`Vivienda segunda mano`
+Vivienda3 <- pivot_wider(Vivienda3, names_from = `General, vivienda nueva y de segunda mano`, values_from = Total)
+Vivienda3$Diferencia <- Vivienda3$`Vivienda nueva` - Vivienda3$`Vivienda segunda mano`
 
 # Graficamos las diferencias a lo largo de los años
-ggplotly(
-  ggplot(ViviendaDiff,aes(x = Periodo, y = Diferencia, color = `Comunidades y Ciudades Autónomas`)) +
+  ggplot(Vivienda3,aes(x = Periodo, y = Diferencia, color = `Comunidades y Ciudades Autónomas`)) +
     geom_line() +
     geom_point() +
-    scale_color_manual(values = coloresCCAA) +  # Colores personalizados
+    scale_color_manual(values = coloresparticiónCCAA) +  # Colores personalizados
     guides(color = guide_legend(title = NULL)) +
     labs(title = 'Análisis de diferencia de IPV entre viviendas nuevas y de segunda mano',
          y = 'Diferencia IPV'
     )
-  )
 ```
 
 ## App interactiva con Shiny del dataset Vivienda
 
-Para finalizar nuestro análisis de los datos del IPV en España, creamos la siguiente aplicación que permite observar con mayor claridad, y de manera personalizada, los gráficos presentados.
+Para finalizar nuestro análisis de los datos del IPV en España, creamos la siguiente aplicación que permite observar con mayor claridad, y de manera personalizada, los gráficos presentados. (No disponible en pdf)
 
-```{r app vivienda, echo=FALSE}
+```{r app vivienda, eval=FALSE, include=FALSE}
 # Crear la interfaz de usuario
 ui_vivienda <- fluidPage(
   titlePanel("Evolución del IPV por CCAA"),

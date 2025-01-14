@@ -296,11 +296,12 @@ Al explorar el dataset, se observa que de 3 distritos completos no se tienen dat
 
 Como solución, se procede a imputar los valores faltantes del año 2022 mediante los datos presentados en el portal de búsqueda de inmuebles de Indomio (https://www.indomio.es/mercado-inmobiliario/comunitat-valenciana/valencia-capital/). Se ha tomado como referencia el máximo del año.
 
-Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022:
+Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022. Además, el distrito que más se asemeja es el de L'olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2010 con este valor.
+En resumen, los valores finales son:
 
-* POBLATS DEL SUD: 2022 <- 1399 €/m2
-* POBLATS DEL NORD: 2022 <- 1352 €/m2
-* POBLATS DE LOEST: 2022 <- 1386 €/m2
+* POBLATS DEL SUD: 2022 <- 1399 €/m2, 2010 <- 1162 €/m2
+* POBLATS DEL NORD: 2022 <- 1352 €/m2, 2010 <- 1162 €/m2
+* POBLATS DE LOEST: 2022 <- 1386 €/m2, 2010 <- 1162 €/m2
 
 ```{r busqueda media, include=FALSE}
 # Mostrar media de precio por distrito, filtrado entre 1300 y 1450
@@ -315,13 +316,6 @@ fotocasa_compra %>%
   filter(DISTRITO == "L'OLIVERETA") %>% 
   summarise(M2_2010 = mean(M2_2010))
 ```
-
-El distrito que más se asemeja es el de L'olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2022 con este valor.
-En resumen, los valores finales son:
-
-* POBLATS DEL SUD: 2022 <- 1399 €/m2, 2010 <- 1162 €/m2
-* POBLATS DEL NORD: 2022 <- 1352 €/m2, 2010 <- 1162 €/m2
-* POBLATS DE LOEST: 2022 <- 1386 €/m2, 2010 <- 1162 €/m2
 
 ```{r imputacion de valores, include=FALSE}
 #Insertar valores faltantes correspondientemente

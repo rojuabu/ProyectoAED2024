@@ -372,7 +372,7 @@ Con esto finalizamos el análisis de valores nulos e incongruencias en el conjun
 
 # Análisis preliminar del fichero Salario.
 
-Primeramente, con el propósito de analizar los outliers y las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en si mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
+Primeramente, con el propósito de analizar los outliers y las distribuciones de los datos se representó de las tres primeras variables, las categóricas; un histograma con el objetivo de ver si alguna de las categorías tenía una frecuencia de aparición anormalmente pequeña o grande. Cabe destacar que estos no son outliers en sí mismos, dado que este es un concepto referido generalmente a variables numéricas, pero es importante descartar que esto ocurra con las variables categóricas. Asimismo, para las variables numéricas, que son el periodo y el total, se realizó un boxplot para ver si alguna contenia algún valor anómalo.
 
 ```{r tabla salario, echo=FALSE}
 # Calcular frecuencias por separado y unirlas en una tabla
@@ -393,35 +393,43 @@ tabla_combinada <- tabla_combinada %>%
   group_by(Variable) %>%
   mutate(Porcentaje = round(Frecuencia / sum(Frecuencia) * 100, 2))
 
-# Definir un dominio explícito para los valores
-dominio_frecuencia <- range(tabla_combinada$Frecuencia, na.rm = TRUE)
-dominio_porcentaje <- range(tabla_combinada$Porcentaje, na.rm = TRUE)
+# Crear la tabla utilizando knitr::kable para PDF
+tabla_pdf <- tabla_combinada %>%
+  knitr::kable(
+    format = "latex",
+    booktabs = TRUE,  # Bordes mejorados para PDF
+    caption = "Frecuencias y Porcentajes por Variable",
+    col.names = c("Variable", "Valor", "Frecuencia", "Porcentaje (%)")
+  ) %>%
+  kableExtra::kable_styling(
+    latex_options = c("hold_position"),  # Ajustar posición y evitar escalas grandes
+    position = "center"
+  ) %>%
+  kableExtra::row_spec(0, bold = TRUE, background = "#FF5733", color = "white") %>%  # Color específico para la fila de encabezados
+  kableExtra::column_spec(3, 
+    background = ifelse(tabla_combinada$Variable == "Sexo", "#4CAF50", 
+                        ifelse(tabla_combinada$Variable == "Comunidades_Autonomas", "#800080", "#0000FF")),
+    color = "white") %>%
+  kableExtra::column_spec(4, 
+    background = ifelse(tabla_combinada$Variable == "Sexo", "#4CAF50", 
+                        ifelse(tabla_combinada$Variable == "Comunidades_Autonomas", "#800080", "#0000FF")),
+    color = "white") %>%
+  kableExtra::row_spec(1:nrow(tabla_combinada), hline_after = FALSE)  # Eliminar espacios en blanco
 
-# Crear y estilizar la tabla con gt y gtExtras
-tabla_combinada %>%
-  gt() %>%
-  gt_theme_espn() %>%  # Aplicar un tema atractivo con gtExtras
-  gt_color_rows(columns = "Frecuencia", palette = "viridis", domain = dominio_frecuencia) %>%  # Aplicar colores a la columna Frecuencia con dominio definido
-  gt_color_rows(columns = "Porcentaje", palette = "viridis", domain = dominio_porcentaje) %>%  # Aplicar colores a la columna Porcentaje con dominio definido
-  tab_header(
-    title = "Frecuencias y Porcentajes por Variable",
-    subtitle = "Distribución de sexo, comunidades autónomas y percentiles de salario"
-  ) %>%
-  fmt_number(
-    columns = Porcentaje,
-    decimals = 2,  # Limitar a dos decimales
-    pattern = "{x}%"  # Añadir el símbolo de porcentaje
-  ) %>%
-  tab_options(
-    table.width = px(700)  # Ajustar el ancho de la tabla
-  ) %>%
-  cols_align(
-    align = "center",
-    columns = everything()
-  )
+# Mostrar la tabla
+tabla_pdf
+
+
+
 ```
 
+
+
+
+
 Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
+
+
 
 ## Análisis de las variables numéricas
 

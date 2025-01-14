@@ -58,6 +58,11 @@ coloresNS <- c( "#ffdb4d","#4DAF4A")
 particionCCAA <- c("Total Nacional", "Balears, Illes", "Canarias", "Cataluña", "Comunitat Valenciana", "Madrid, Comunidad de")
 ```
 
+```{r tamaño de los graficos, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=4, dpi=150)
+knitr::opts_chunk$set(fig.align='center')
+```
+
 # Introducción
 
 En este proyecto, se analiza la evolución de los precios de la vivienda en España en comparación con los salarios medios, con un enfoque especial en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es explorar tendencias, identificar posibles disparidades y ofrecer un análisis detallado basado en datos. Este trabajo busca aplicar técnicas de análisis exploratorio de datos (EDA) para extraer información relevante que pueda ser de utilidad para futuros trabajos.
@@ -441,7 +446,7 @@ graficos <- lapply(percentiles_levels, function(level) {
 })
 
 # Combinar los gráficos
-grafico_final <- wrap_plots(graficos, ncol = 2)
+grafico_final <- wrap_plots(graficos, ncol = 3)
 
 # Mostrar el conjunto de gráficos
 grafico_final

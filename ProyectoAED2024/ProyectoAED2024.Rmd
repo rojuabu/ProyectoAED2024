@@ -34,14 +34,14 @@ header-includes:
 
 ```{r limpieza, include=FALSE}
 rm(list = ls())
+```
+
+```{r tamaño de los graficos, include=FALSE}
 knitr::opts_chunk$set(warning=FALSE,
                       message=FALSE,
                       out.width = "80%",
                       fig.align = "center",
                       echo = FALSE)
-```
-
-```{r tamaño de los graficos, include=FALSE}
 knitr::opts_chunk$set(fig.width=8, fig.height=4, dpi=150)
 knitr::opts_chunk$set(fig.align='center')
 ```
@@ -581,7 +581,7 @@ g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comu
     y = 'Total (€)',
     color = NULL  # Sin título en la leyenda
   ) +
-  scale_color_manual(values = coloresCCAA) +  # Colores personalizados
+  scale_color_manual(values = coloresparticiónCCAA) +  # Colores personalizados
   guides(color = guide_legend(title = NULL))  # Sin título en la leyenda
 
 # Mostrar el gráfico
@@ -682,7 +682,7 @@ df_filtered_final <- df_filtered %>%
 g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
   geom_line() +
   geom_point() +
-  scale_color_manual(values = coloresCCAA) +  # Colores personalizados
+  scale_color_manual(values = coloresparticiónCCAA) +  # Colores personalizados
   guides(color = guide_legend(title = NULL)) +
   labs(title = 'Análisis de discrepancias de género por años y comunidades',
        y = 'Diferencia (€)')

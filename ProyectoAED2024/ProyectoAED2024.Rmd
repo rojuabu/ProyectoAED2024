@@ -124,7 +124,7 @@ Por otro lado, la variable `Medias y percentiles` es de tipo `string` y refleja 
 
 Seguidamente, tenemos la variable `periodo` que es de tipo `numérico` y que nos indica el año que estamos tratando.
 
-Por último, tenemos la variable `Total` que es de tipo `string`y refleja el valor del salario en €.
+Por último, tenemos la variable `Total` que es de tipo `string` y refleja el valor del salario en €.
 
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico. Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
 
@@ -158,6 +158,7 @@ Salario$Sexo<-factor(inter2,levels = levels(inter2),labels = levels(inter2))
 # Por último comprobamos que no tenemos ningún dato perdido
 vis_miss(Salario)
 ```
+
 Utilizando la función `vis_miss`, descubrimos que, afortunadamente, no existen datos faltantes.
  
 ### Fin de la preparación del dataset
@@ -170,7 +171,7 @@ save(Salario,file = '../data/Salario_clean.csv')
 
 ## Carga y ajuste del dataset: Vivienda
 
-A continuación, estudiaremos el contenido del dataset Vivienda formado por 1920 registros de 5 variables. 
+A continuación, estudiaremos el contenido del dataset Vivienda formado por 1920 registros de 5 variables.
 
 ### Variables en el dataset
 
@@ -222,14 +223,14 @@ A continuación, estudiamos la posible existencia de datos faltantes en nuestro 
 vis_miss(Vivienda)
 ```
 
-Al usar la función `viss_miss`, encontramos algunos datos faltantes en la variable "Total". Utilizando de nuevo el comando `str`, vemos que nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla.
+Al usar la función `viss_miss`, encontramos algunos datos faltantes en la variable `Total`. Utilizando de nuevo el comando `str`, vemos que nuestro dataset no tiene ningún valor del IPV de las viviendas nuevas y de segunda mano en Ceuta y Melilla.
 
 ```{r encontrar datos faltantes en vivienda, include=FALSE}
 # Buscamos dónde están dichos datos faltantes
 str(Vivienda[is.na(Vivienda$Total),])
 ```
 
-Podemos lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de imputar valores nuevos.
+Existen distintas maneras de lidiar con estos datos faltantes de distintas maneras. Podemos eliminar las ciudades autónomas de Ceuta y Melilla, y estudiar tan solo el resto de datos, podemos mantener el dataset en este estado y simplemente obviar el análisis de vivienda nueva o de segunda mano en estas ciudades, o podemos tratar de imputar valores nuevos.
 
 En nuestro caso, dado que los datos son proporcionados por la INE, y posiblemente sean calculados a partir de una enorme cantidad y factores que no están a nuestra disposición, optaremos por dejar los datos tal y como están, aunque esto nos prive de analizar los distintos tipos de vivienda en las ciudades autónomas.
 
@@ -245,7 +246,7 @@ save(Vivienda,file = '../data/Vivienda_clean.csv')
 
 En este último apartado de proceso de carga y ajuste de conjunto de datos, se procede a examinar el conjunto de precios del metro cuadrado por barrio en la ciudad de Valencia en los años 2010 y 2022.
  
-El conjunto de la plataforma Fotocasa responde al precio del metro cuadrado para la compra de viviendas en la ciudad de Valencia. Se presentan datos de precio en los años de 2010 (`Precio_2010 (Euros/m2)`) y 2022(`Precio_2022 (Euros/m2)`), con información sobre el distrito (`DISTRITO`), barrio(`BARRIO`), precio de metro cuadrado (`Max_historico (Euros/m2)`) y máximos históricos (`Año_Max_Hist`). Las columnas Geo.Point (`Geo.Point`) y Geo.Shape (`Geo.Shape`) contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito (`coddistrit`) diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio (`codbarrio`) numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio (`coddistbar`) identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
+El conjunto de la plataforma Fotocasa responde al precio del metro cuadrado para la compra de viviendas en la ciudad de Valencia. Se presentan datos de precio en los años de 2010 (`Precio_2010 (Euros/m2)`) y 2022 (`Precio_2022 (Euros/m2)`), con información sobre el distrito (`DISTRITO`), barrio(`BARRIO`), precio de metro cuadrado (`Max_historico (Euros/m2)`) y máximos históricos (`Año_Max_Hist`). Las columnas Geo.Point (`Geo.Point`) y Geo.Shape (`Geo.Shape`) contienen información sobre las coordenadas geográficas sobre el bario y su entensión en la ciudad de valencia. Referente a los códigos, el de distrito (`coddistrit`) diferencia unequívocamente los distritos de la ciudad de Valencia, mientras que el de barrio (`codbarrio`) numeran los distintos barrios que conforman el distrito. Por ello, la columna de codigo de distrito/barrio (`coddistbar`) identifica de forma única cada barrio de la ciudad de Valencia. Por ejemplo, el barrio de Benimamet tiene el código 1 del distrito de Poblados del Oeste, que tiene código de distrito 18. Por lo tanto su código de distrito/barrio sería 181.
 
 ### Renombramiento columnas
 
@@ -275,7 +276,7 @@ fotocasa_compra$CODDIS <- as.character(fotocasa_compra$CODDIS)
 fotocasa_compra$CODBAR <- as.character(fotocasa_compra$CODBAR)
 ```
 
-De las variables restantes sin comentar son de tipo numérico, enfocando que aquellas únicamente numéricas contínuas son las del precio en los años de 2010, 2022 y máximos históricos. No obstante, antes de analizar con las métricas de resumen, hay que realizar un análisis de valores faltantes y duplicados, así como la presencia de valores anómalos que puedan afectar al posterior análisis.
+Las variables restantes sin comentar son de tipo numérico. Además, las únicas numéricas continuas son las del precio en los años de 2010, 2022 y máximos históricos. No obstante, antes de analizar con las métricas de resumen, hay que realizar un análisis de valores faltantes y duplicados, así como la presencia de valores anómalos que puedan afectar al posterior análisis.
 
 ### Duplicados y valores faltantes
 
@@ -318,7 +319,7 @@ Al explorar el dataset, se observa que de 3 distritos completos no se tienen dat
 
 Como solución, se procede a imputar los valores faltantes del año 2022 mediante los datos presentados en el portal de búsqueda de inmuebles de Indomio (https://www.indomio.es/mercado-inmobiliario/comunitat-valenciana/valencia-capital/). Se ha tomado como referencia el máximo del año.
 
-Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022. Además, el distrito que más se asemeja es el de L'Olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2010 con este valor.
+Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo que se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022. Además, el distrito que más se asemeja es el de L'Olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2010 con este valor.
 En resumen, los valores finales son:
 
 * POBLATS DEL SUD: 2022 <- 1399 €/m2, 2010 <- 1162 €/m2
@@ -508,7 +509,7 @@ Como este análisis se realiza a lo largo de los años, el hecho de que el rango
 
 ## Análisis preliminar del fichero Vivienda.
 
-Los datos numéricos del dataset Vivienda corresponden al IPV. Este es un índice calculado por el INE que busca explicar el precio de la vivienda. Así, dado que este dato ya es en sí profundamente procesado, no creemos que realizar un análisis como el anterior sea ocurrente, pues no encontraríamos outliers o distribuciones interesantes.
+Los datos numéricos del dataset Vivienda corresponden al IPV. Este es un índice calculado por el INE que busca explicar el precio de la vivienda. Así, dado que este dato ya es en sí profundamente procesado, no creemos que realizar un análisis como el anterior sea ocurrente, pues no seríamos capaces de interpretar correctamente los datos. Aún así, destacamos que el dataset Vivienda tiene una estructra muy similar al Salario, y por tanto, estudiar cosas como la frecuencia se volvería repetitivo.
 
 ## Análisis preliminar del fichero Precio M2 Valencia
 
@@ -558,7 +559,7 @@ Viendo estos resultados, se presencia las mismas observaciones que nos deja el a
 
 ### Evolución del sueldo medio
 
-Primeramente, nos centraremos en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas.Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio(tomando como referencia 2022) y con menor valor de este. No obstante,en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
+Primeramente, nos centraremos en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas. Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio (tomando como referencia 2022) y con menor valor de este. No obstante, en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
 ```{r evolucion sueldo medio, echo=FALSE}
 primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
@@ -1085,4 +1086,6 @@ Con este último análisis se concluye que la evolución de los precios en Valen
 
 # Conclusión
 
-El análisis realizado nos ha permitido comprender mejor las dinámicas entre el precio de la vivienda y los salarios en España. Se observaron patrones relevantes que reflejan desafíos en términos de accesibilidad y sostenibilidad económica para la población en distintos puntos del país. Este estudio resalta como consecuencia la importancia de contar con políticas efectivas que aborden estos desafíos y fomenta la reflexión sobre cómo las tendencias actuales pueden afectar al futuro de la población en España en calidad de una vivienda y salario digno.
+El análisis realizado nos ha permitido comprender mejor las dinámicas entre el precio de la vivienda y los salarios en España. Se observaron patrones relevantes que reflejan desafíos en términos de accesibilidad y sostenibilidad económica para la población en distintos puntos del país. Vemos como los salarios aumenta muy suavemente con el tiempo, mientras que a partir del 2015, el IPV ha aumentado a un ritmo frenético.
+
+Este estudio resalta como consecuencia la importancia de contar con políticas efectivas que aborden estos desafíos y fomenta la reflexión sobre cómo las tendencias actuales pueden afectar al futuro de la población en España en calidad de una vivienda y salario digno.

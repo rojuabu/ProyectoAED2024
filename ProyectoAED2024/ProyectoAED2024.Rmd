@@ -19,7 +19,7 @@ address:
     postcode: 46100
     country: España
 abstract: |
-  Este estudio analiza la evolución de los precios de la vivienda en España en relación con los salarios medios, con un enfoque particular en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es identificar tendencias, destacar posibles disparidades económicas y proporcionar un análisis detallado basado en datos. Para ello, se han empleado técnicas de análisis exploratorio de datos (EDA) sobre tres conjuntos de datos: uno relacionado con salarios, otro con precios de vivienda en general, y un tercero específico sobre precios por metro cuadrado en Valencia. Los hallazgos de este trabajo buscan ser una base informativa para futuros estudios sobre la dinámica entre los salarios y el mercado inmobiliario en España.
+  Este estudio analiza la evolución de los precios de la vivienda en España en relación con los salarios medios, con un enfoque particular en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es identificar tendencias, destacar posibles disparidades económicas y proporcionar un análisis detallado basado en datos. Para ello, se han empleado técnicas de análisis exploratorio de datos (EDA) sobre tres conjuntos de datos: uno relacionado con salarios, otro con precios de vivienda en general, y un tercero específico sobre precios por metro cuadrado en Valencia. Los resultados de este trabajo buscan ser una base informativa para futuros estudios sobre la dinámica entre los salarios y el mercado inmobiliario en España.
 
 date: "`r Sys.Date()`"
 linenumbers: false
@@ -318,7 +318,7 @@ Al explorar el dataset, se observa que de 3 distritos completos no se tienen dat
 
 Como solución, se procede a imputar los valores faltantes del año 2022 mediante los datos presentados en el portal de búsqueda de inmuebles de Indomio (https://www.indomio.es/mercado-inmobiliario/comunitat-valenciana/valencia-capital/). Se ha tomado como referencia el máximo del año.
 
-Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022. Además, el distrito que más se asemeja es el de L'olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2010 con este valor.
+Para el caso de 2010, no se ha encontrado información suficiente para realizar una imputación correcta, por lo se decide aproximar por el precio de 2010 de aquellos distritos con un precio por metro cuadrado similar al de los distritos con valores faltantes en 2022. Además, el distrito que más se asemeja es el de L'Olivereta con 1162 €/m2. Vamos a imputar los valores faltantes de 2010 con este valor.
 En resumen, los valores finales son:
 
 * POBLATS DEL SUD: 2022 <- 1399 €/m2, 2010 <- 1162 €/m2
@@ -1079,10 +1079,10 @@ ggplot(fotocasa_compra_high, aes(x = reorder(BARRIO, DIF_BARRIO), y = DIF_BARRIO
 
 Vemos que para los 10 barrios con mayor aumento todos pertenecen a distritos cuya diferencia de precios fue de un aumento, como es el caso de Quatre Carreres, L'Eixample o Extramurs. Se destaca el barrio de Ciutat de les Arts i les Ciències con un aumento de del 126,24%, muy por encima incluso del segundo barrio (El Pla del Real) con un aumento del 91,31%, casi una diferencia de 35 puntos porcentuales. 
 
-En el caso de los 10 barrios con mayor descenso de precio, se observa como diferencia barrios pertenecientes a distritos con aumento de precio. Este es el caso del barrio de Natzaret en el distrito de Poblats Marítims, Cami Real en el distrito de Jesus. Esto da a entender que aunque haya distritos con aumento de precio, no quiere indicar que la tendencia de sus barrios haya sido de la misma manera.
+En el caso de los 10 barrios con mayor descenso de precio, se observa como diferencia varios pertenecientes a distritos con aumento de precio. Este es el caso del barrio de Natzaret en el distrito de Poblats Marítims o Cami Real en el distrito de Jesus. Esto da a entender que aunque haya distritos con aumento de precio, no quiere indicar que la tendencia de sus barrios haya sido de la misma manera.
 
-Con esto se da por finalizado este apartado del análisis de la tendencia del precio por metro cuadrado para los distintos barrios de la ciudad de Valencia.
+Con este último análisis se concluye que la evolución de los precios en Valencia no ha sido uniforme, y que la localización de los barrios y distritos ha sido un factor determinante en la evolución de los precios.
 
 # Conclusión
 
-El análisis realizado nos permite comprender mejor las dinámicas entre el precio de la vivienda y los salarios en España. Se observaron patrones relevantes que reflejan desafíos en términos de accesibilidad y sostenibilidad económica para la población. Este estudio resalta la importancia de contar con políticas efectivas que aborden estas disparidades y fomenta la reflexión sobre cómo las tendencias actuales pueden afectar el bienestar socioeconómico en el futuro.
+El análisis realizado nos ha permitido comprender mejor las dinámicas entre el precio de la vivienda y los salarios en España. Se observaron patrones relevantes que reflejan desafíos en términos de accesibilidad y sostenibilidad económica para la población en distintos puntos del país. Este estudio resalta como consecuencia la importancia de contar con políticas efectivas que aborden estos desafíos y fomenta la reflexión sobre cómo las tendencias actuales pueden afectar al futuro de la población en España en calidad de una vivienda y salario digno.

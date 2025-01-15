@@ -1,18 +1,49 @@
 ---
 title: "Análisis del precio de la vivienda y el salario medio"
 author:
-- Rodrigo Juanes Busolo
-- Noé López García
-- Marc Velasco Mateu
-output:
-  pdf_document: default
-  html_notebook: default
-  html_document:
-    df_print: paged
+  - name: Noé López García
+    email: nologar@alumni.uv.es
+    affiliation: UV
+  - name: Marc Velasco Mateu
+    email: marcvem2@alumni.uv.es
+    affiliation: UV
+  - name: Rodrigo Juanes Busolo
+    email: rojuabu@alumni.uv.es
+    affiliation: UV
+address:
+  - code: UV
+    organization: Universitat de València
+    addressline: Avinguda de l'Universitat
+    city: Burjassot
+    state: Valencia
+    postcode: 46100
+    country: España
+abstract: |
+  Este estudio analiza la evolución de los precios de la vivienda en España en relación con los salarios medios, con un enfoque particular en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es identificar tendencias, destacar posibles disparidades económicas y proporcionar un análisis detallado basado en datos. Para ello, se han empleado técnicas de análisis exploratorio de datos (EDA) sobre tres conjuntos de datos: uno relacionado con salarios, otro con precios de vivienda en general, y un tercero específico sobre precios por metro cuadrado en Valencia. Los hallazgos de este trabajo buscan ser una base informativa para futuros estudios sobre la dinámica entre los salarios y el mercado inmobiliario en España.
+
+date: "`r Sys.Date()`"
+linenumbers: false
+numbersections: true
+output: 
+  rticles::elsevier_article:
+    keep_tex: true
+    citation_package: natbib
+header-includes:
+  - \usepackage[margin=0.98in]{geometry}
 ---
 
 ```{r limpieza, include=FALSE}
 rm(list = ls())
+knitr::opts_chunk$set(warning=FALSE,
+                      message=FALSE,
+                      out.width = "80%",
+                      fig.align = "center",
+                      echo = FALSE)
+```
+
+```{r tamaño de los graficos, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=4, dpi=150)
+knitr::opts_chunk$set(fig.align='center')
 ```
 
 ```{r carga de librerias, include=FALSE}
@@ -33,9 +64,6 @@ library(tidyr)
 library(gganimate)
 library(mapSpain)
 library(viridis)  # Para una escala de colores visualmente atractiva
-#remotes::install_github("jthomasmock/gtExtras")
-library(gt)
-library(gtExtras)
 library(shiny)
 ```
 
@@ -58,14 +86,8 @@ coloresNS <- c( "#ffdb4d","#4DAF4A")
 particionCCAA <- c("Total Nacional", "Balears, Illes", "Canarias", "Cataluña", "Comunitat Valenciana", "Madrid, Comunidad de")
 ```
 
-```{r tamaño de los graficos, include=FALSE}
-knitr::opts_chunk$set(fig.width=8, fig.height=4, dpi=150)
-knitr::opts_chunk$set(fig.align='center')
-```
 
-# Introducción
 
-En este proyecto, se analiza la evolución de los precios de la vivienda en España en comparación con los salarios medios, con un enfoque especial en el precio por metro cuadrado en la ciudad de Valencia. El objetivo principal es explorar tendencias, identificar posibles disparidades y ofrecer un análisis detallado basado en datos. Este trabajo busca aplicar técnicas de análisis exploratorio de datos (EDA) para extraer información relevante que pueda ser de utilidad para futuros trabajos.
 
 # Acondicionamiento de los datos
 
@@ -80,11 +102,11 @@ fotocasa_compra <- read.csv("../data/precio-de-compra-en-fotocasa.csv", header =
 
 ## Carga y ajuste del dataset: Salario
 
-Estudiemos el contenido del dateset Salario, formado por 4860 registros de 5 variables.
+Primeramente, estudiemos el contenido del dateset Salario, formado por 4860 registros de 5 variables.
 
 ### Variables en el dataset
 
-Inicialmente ejecutamos el comando str para observar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite visualizar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
+Inicialmente ejecutamos el comando str para observar el aspecto que tienen los datos. Además, este comando nos permite visualizar el tipo de dato que contiene cada columna, lo que nos permite comprobar si alguna de ellas debería ser convertida a otro tipo de dato más acorde a la información que contiene.
 
 ```{r str salario, include=FALSE}
 str(Salario)
@@ -106,7 +128,7 @@ Por último, tenemos la variable `Total` que es de tipo `string`y refleja el val
 
 En nuestro caso, para el fichero de salario se detectó que la variable total contenía un tipo de dato str, cuando lo lógico es que esta columna sea de tipo numérico. Esto se realizó de manera intencionada al importar los datos, dado que en el INE se emplean comas para separar los decimales, algo que en R se realiza con puntos. Por ello, y para evitar conflictos; se importó como una cadena de texto y luego se realizaron las operaciones siguientes para darle el formato adecuado. Primeramente, como el punto también fue empleado para mostrar la separación de los miles, se sustituyó este elemento por vacío. Seguidamente, las comas fueron sustiuidas por puntos, para finalmente mediante el comando as.numeric convertir los datos de tipo string a numeric.
 
-Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizaremos esta conversión con la variable sexo.
+Además, dado que la variable de medias y percentiles es de tipo categórico y solo puede tomar un número finito de valores, esta fue convertida a factor. Del mismo modo, realizamos esta conversión con la variable sexo.
 
 ```{r ajuste preliminar de salario, echo=FALSE}
 # Pasamos a cambiar el formato, y una vez con este correcto hacer un casteo a numérico
@@ -140,7 +162,7 @@ Utilizando la función `vis_miss`, descubrimos que, afortunadamente, no existen 
  
 ### Fin de la preparación del dataset
 
-Finalmente guardamos el nuevo fichero con los cambios.
+Finalmente guardamos el nuevo fichero con los cambios, para poder trabajar sin necesidad de volver a ejecutar este apartado.
 
 ```{r guardar el nuevo dataset salario, include=FALSE}
 save(Salario,file = '../data/Salario_clean.csv')
@@ -388,13 +410,14 @@ tabla_pdf <- tabla_combinada %>%
     format = "latex",
     booktabs = TRUE,  # Bordes mejorados para PDF
     caption = "Frecuencias y Porcentajes por Variable",
-    col.names = c("Variable", "Valor", "Frecuencia", "Porcentaje (%)")
+    col.names = c("Variable", "Valor", "Frecuencia", "Porcentaje (%)"),
+    longtable = TRUE # Habilitar división en varias páginas si es necesario
   ) %>%
   kableExtra::kable_styling(
-    latex_options = c("hold_position"),  # Ajustar posición y evitar escalas grandes
+    latex_options = c("repeat_header", "scale_down"), # Repetir encabezados y ajustar escala automáticamente
     position = "center"
   ) %>%
-  kableExtra::row_spec(0, bold = TRUE, background = "#FF5733", color = "white") %>%  # Color específico para la fila de encabezados
+  kableExtra::row_spec(0, bold = TRUE, background = "#FF5733", color = "white") %>%
   kableExtra::column_spec(3, 
     background = ifelse(tabla_combinada$Variable == "Sexo", "#4CAF50", 
                         ifelse(tabla_combinada$Variable == "Comunidades_Autonomas", "#800080", "#0000FF")),
@@ -402,11 +425,11 @@ tabla_pdf <- tabla_combinada %>%
   kableExtra::column_spec(4, 
     background = ifelse(tabla_combinada$Variable == "Sexo", "#4CAF50", 
                         ifelse(tabla_combinada$Variable == "Comunidades_Autonomas", "#800080", "#0000FF")),
-    color = "white") %>%
-  kableExtra::row_spec(1:nrow(tabla_combinada), hline_after = FALSE)  # Eliminar espacios en blanco
+    color = "white")
 
 # Mostrar la tabla
 tabla_pdf
+
 ```
 
 Como vemos no existe ninguna anomalía en las variables categóricas, dado que todas aparecen con la misma frecuencia 
@@ -449,38 +472,32 @@ grafico_final
 Como podemos observar, las distribuciones no parecen ajustarse a una forma gaussiana en ninguno de los casos. Por eso, para definir la distribución, vamos a usar la mediana y el rango intercuartílico, ya que estas métricas no dependen del tipo de distribución que tengan los datos y son más fiables para describir distribuciones asimétricas o con valores atípicos
 
 ```{r resumen metricas salario, echo=FALSE}
-# Crear tabla con gt para representar cada percentil con la mediana e IQR
+# Crear tabla con kable para representar cada percentil con la mediana e IQR
 metricas_percentiles <- Salario %>%
   group_by(`Medidas y percentiles`) %>%
-  # Empleamos los parámetros robustos frente a la distribución de los datos
   summarise(
     Mediana = median(Total, na.rm = TRUE),
     IQR = IQR(Total, na.rm = TRUE)
   )
 
-# Crear la tabla utilizando gt
+# Generar la tabla con kable
 tabla_metricas <- metricas_percentiles %>%
-  gt() %>%
-  tab_header(
-    title = "Metricas de Salario por Percentil",
-    subtitle = "Mediana y Rango Intercuartílico para cada percentil"
+  kable(
+    caption = "Métricas de Salario por Percentil: Mediana y Rango Intercuartílico para cada percentil",
+    format = "latex",
+    booktabs = TRUE,
+    longtable = TRUE # Permite dividir en varias páginas si es necesario
   ) %>%
-  tab_options(
-    table.width = px(700)  # Ajustamos el ancho de la tabla
+  kableExtra::kable_styling(
+    latex_options = c("repeat_header", "scale_down"), # Repetir encabezados y ajustar escala automáticamente
+    position = "center"
   ) %>%
-  # alineamos el contenido de las columnas
-  cols_align(
-    align = "center",
-    columns = everything()
-  )%>%
-  fmt_number(
-    columns = Mediana,
-    suffixing = TRUE,
-    pattern = "{x} €"
-  )
+  kableExtra::row_spec(0, bold = TRUE, background = "#FF5733", color = "white") %>% # Encabezado resaltado
+  kableExtra::column_spec(2, bold = TRUE, color = "black") # Resaltar columna específica
 
 # Mostrar la tabla
 tabla_metricas
+
 ```
 
 A partir de la tabla de las métricas de salario por percentil, podemos observar que los valores de la mediana y del rango intercuartílico (IQR) varían de manera significativa entre los diferentes percentiles. La mediana aumenta progresivamente desde 8.720 € en el percentil 10 hasta 39.090 € en el percentil 90. Esto indica un crecimiento notable de los salarios conforme se avanza a percentiles más altos.

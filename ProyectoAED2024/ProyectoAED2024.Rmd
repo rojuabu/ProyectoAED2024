@@ -86,9 +86,6 @@ coloresNS <- c( "#ffdb4d","#4DAF4A")
 particionCCAA <- c("Total Nacional", "Balears, Illes", "Canarias", "Cataluña", "Comunitat Valenciana", "Madrid, Comunidad de")
 ```
 
-
-
-
 # Acondicionamiento de los datos
 
 ```{r carga datasets, include=FALSE}
@@ -555,6 +552,10 @@ Viendo estos resultados, se presencia las mismas observaciones que nos deja el a
 
 # Análisis explicativo de los datos
 
+Antes de empezar con el análisis explicativo, hacemos un inciso sobre la representación gráfica de las comunidades autónomas. Dado que representar todas y cada una de las comunidades autónomas en un solo gráfico puede empeorar el mensaje que intenta transmitir este, escogeremos un número reducido de regiones que mostrar.
+
+Por supuesto, mostraremos los datos de toda España, así como los de la Comunidad Valenciana. Pero además, mostraremos los datos de Madrid, Cataluña, Canarias y Baleares, para tener así, otras regiones sobre las que comparar.
+
 ## Análisis del archivo Salario
 
 ### Evolución del sueldo medio
@@ -562,25 +563,14 @@ Viendo estos resultados, se presencia las mismas observaciones que nos deja el a
 Primeramente, nos centraremos en ver como ha variado el salario medio de cada comunidad autónoma a lo largo del tiempo. El objetivo de este análisis es ver como ha variado el salario medio en cada comunidad y si existe una tendencia general en las mismas. Por limitaciones de la representación solo se muestran las dos comunidades con mayor salario medio (tomando como referencia 2022) y con menor valor de este. No obstante, en la versión web creada con shiny se puede jugar con todas las comunidades autónomas.
 
 ```{r evolucion sueldo medio, echo=FALSE}
-primer_analisis<-Salario[Salario$`Medidas y percentiles`=='Media'&Salario$Sexo=='Ambos sexos'& Salario$`Comunidades autónomas`!='Total Nacional',]
-
 # Filtrando las comunidades autónomas con el valor de salario medio de 2022
 primer_analisis <- Salario %>%
   filter(`Medidas y percentiles` == 'Media', 
-         Sexo == 'Ambos sexos', 
-         `Comunidades autónomas` != 'Total Nacional')
-
-# Seleccionando las dos comunidades con mayor y menor salario medio en el 2022 como referencia de la tendencia a lo largo de los años
-comunidades_filtradas <- primer_analisis %>%
-  filter(Periodo == 2022) %>%
-  slice_max(Total, n = 2) %>%
-  bind_rows(slice_min(primer_analisis %>% filter(Periodo == 2022), Total, n = 2)) %>%
-  select(`Comunidades autónomas`) %>%
-  distinct()
+         Sexo == 'Ambos sexos')
 
 # Filtrando los datos para solo incluir las comunidades seleccionadas
 primer_analisis_filtrado <- primer_analisis %>%
-  filter(`Comunidades autónomas` %in% comunidades_filtradas$`Comunidades autónomas`)
+  filter(`Comunidades autónomas` %in% particionCCAA)
 
 # Crear el gráfico
 g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comunidades autónomas`)) +
@@ -598,7 +588,7 @@ g1 <- ggplot(primer_analisis_filtrado, aes(x = Periodo, y = Total, color = `Comu
 g1
 ```
 
-Como se puede observar, las comunidades con mayor salario medio son el País Vasco y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son Extremadura y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
+Como se puede observar, las comunidades con mayor salario medio son Cataluña y Madrid. Por otro lado, las comunidades con peor sueldo medio a lo largo de los años son la Comunidad Valenciana y Canarias. Además se puede ver una clara tendencia al alza en los últimos años, lo que demuestra que el salario medio está subiendo año a año en nuestro país.
 
 Para terminar este primer análisis, y pese a que no es observable en este pdf, el Rmd incluye un mapa interactivo que muestra la evolución del salario medio en el territorio español.
 
@@ -675,8 +665,7 @@ A continuación, calculamos la brecha salarial media en cada comunidad autónoma
 ```{r brecha salarial por ccaa, echo=FALSE}
 # Filtramos las comunidades autónomas excluyendo "Total Nacional" y seleccionamos solo la media y el sexo que no sea "Ambos sexos"
 df_filtered <- Salario %>%
-  filter(`Comunidades autónomas` != 'Total Nacional', 
-         `Medidas y percentiles` == 'Media', 
+  filter(`Medidas y percentiles` == 'Media', 
          Sexo != 'Ambos sexos') %>%
   select(-`Medidas y percentiles`)
 
@@ -685,17 +674,9 @@ df_filtered <- df_filtered %>%
   pivot_wider(names_from = Sexo, values_from = Total) %>%
   mutate(diferencia = Hombres - Mujeres)
 
-# Filtramos las comunidades con las dos mayores y las dos menores diferencias en el año 2022
-df_filtered_2022 <- df_filtered %>%
-  filter(Periodo == 2022) %>%
-  slice_max(order_by = diferencia, n = 2) %>%
-  bind_rows(slice_min(df_filtered %>% filter(Periodo == 2022), order_by = diferencia, n = 2))
-
 # Filtramos el dataset original para obtener las comunidades seleccionadas
-comunidades_seleccionadas <- df_filtered_2022$`Comunidades autónomas`
-
 df_filtered_final <- df_filtered %>%
-  filter(`Comunidades autónomas` %in% comunidades_seleccionadas)
+  filter(`Comunidades autónomas` %in% particionCCAA)
 
 # Graficamos las diferencias a lo largo de los años
 g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comunidades autónomas`)) +
@@ -709,7 +690,7 @@ g4 <- ggplot(df_filtered_final, aes(x = Periodo, y = diferencia, color = `Comuni
 print(g4)
 ```
 
-Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias, las Islas Baleares y Extremadura. Este dato es sorprendente, porque justamente las Islas Canarias y Extremadura son las dos comunidades autónomas con menor salario medio.
+Como vemos, las comunidades con la menor diferencia de salario medio entre hombres y mujeres son las Islas Canarias y las Islas Baleares. Este dato es sorprendente, pues las Islas Canarias son una de las comunidades autónomas con menor salario medio.
 
 ### App interactiva con Shiny del dataset Salario
 
